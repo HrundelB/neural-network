@@ -42,6 +42,7 @@ public class Perceptron {
     int inputDim = learning[0].dim();
     int countOfLearningSamples = learning.length;
     initWeights(inputDim);
+    System.out.println("Learning...");
     for (int k = 0; k < numberOfSteps; k++) {
       for (int d = 0; d < countOfLearningSamples; d++){
         this.calculate(learning[d]);
@@ -64,7 +65,7 @@ public class Perceptron {
     for (int l = 0; l < countOfLayers; l++) {
       for (int i = 0; i < layers[l].getWeights().rows(); i++) {
         for (int j = 0; j < layers[l].getWeights().columns(); j++) {
-          layers[l].getWeights().adjust(i, j, n * deltas[l].get(j) * outputs.get(l).get(i));
+          layers[l].getWeights().adjust(i, j, n * deltas[l].get(i) * outputs.get(l).get(j));
         }
       }
     }
@@ -74,9 +75,11 @@ public class Perceptron {
     double result;
     double o = layers[countOfLayers - 1].getOutputs().get(0);
     if (answer == 1) {
+      System.out.println("Log likelihood function: " + Math.log(o));
       result = 1 - o;
     } else {
       if (answer == -1) {
+        System.out.println("Log likelihood function: " + Math.log(1 - o));
         result = (o - o * o)/(o - 1);
       } else {
         throw new IllegalArgumentException("Answer must be only 1 or -1");
@@ -91,7 +94,8 @@ public class Perceptron {
     for (int j = 0; j < neurons; j++) {
       double o = layers[l].getOutputs().get(j);
       Mx weights = layers[l + 1].getWeights();
-      vecBuilder.append(o * (1 - o) * multiply(weights.col(j), previousDelta));
+      Vec vec = new ArrayVec(weights.col(j).toArray());
+      vecBuilder.append(o * (1 - o) * multiply(vec, previousDelta));
     }
     return vecBuilder.build();
   }
