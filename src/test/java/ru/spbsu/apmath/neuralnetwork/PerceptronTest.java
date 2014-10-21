@@ -36,8 +36,13 @@ public class PerceptronTest {
         answers[i] = -1;
       }
     }
-    perceptron.backPropagation(0.05, learningVecs, answers, 100);
+    perceptron.backPropagation(0.09, learningVecs, answers, 2000);
     System.out.println("result for -1: " + perceptron.calculate(new ArrayVec(5, 4)));
     System.out.println("result for +1: " + perceptron.calculate(new ArrayVec(1, 1)));
+    System.out.println("result for -1 (not learned): " + perceptron.calculate(new ArrayVec(4.5, 3.5)));
+    System.out.println("result for +1 (not learned): " + perceptron.calculate(new ArrayVec(0.25, 1.25)));
+    System.out.println("result for -1 (not learned): " + perceptron.calculate(new ArrayVec(5, 4.5)));
+    System.out.println("result for +1 (not learned): " + perceptron.calculate(new ArrayVec(0, 0)));
+    System.out.println("result for middle (not learned): " + perceptron.calculate(new ArrayVec(2, 2)));
   }
 }
