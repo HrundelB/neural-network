@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,8 +15,8 @@ import java.util.Arrays;
 public class PerceptronTest {
 
   @Test
-  public void backPropagationTest() {
-    Perceptron perceptron = new Perceptron(Arrays.asList(3));
+  public void backPropagationTest() throws IOException {
+    Perceptron perceptron = new Perceptron(new int[] {2,3,1});
     Vec[] learningVecs = new Vec[10];
     learningVecs[0] = new ArrayVec(1, 1);
     learningVecs[1] = new ArrayVec(0.5, 0.5);
@@ -36,7 +36,7 @@ public class PerceptronTest {
         answers[i] = -1;
       }
     }
-    perceptron.backPropagation(0.09, learningVecs, answers, 2000);
+    perceptron.backPropagation(0.09, learningVecs, answers, 200);
     System.out.println("result for -1: " + perceptron.calculate(new ArrayVec(5, 4)));
     System.out.println("result for +1: " + perceptron.calculate(new ArrayVec(1, 1)));
     System.out.println("result for -1 (not learned): " + perceptron.calculate(new ArrayVec(4.5, 3.5)));
@@ -44,5 +44,6 @@ public class PerceptronTest {
     System.out.println("result for -1 (not learned): " + perceptron.calculate(new ArrayVec(5, 4.5)));
     System.out.println("result for +1 (not learned): " + perceptron.calculate(new ArrayVec(0, 0)));
     System.out.println("result for middle (not learned): " + perceptron.calculate(new ArrayVec(2, 2)));
+    perceptron.save("src/test/data/perceptron");
   }
 }
