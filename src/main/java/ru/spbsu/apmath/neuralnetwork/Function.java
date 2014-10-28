@@ -7,5 +7,5 @@ package ru.spbsu.apmath.neuralnetwork;
  * Time: 18:07
  */
 public interface Function {
-  double call(double... x);
+  double call(double x);
 }
