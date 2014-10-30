@@ -2,7 +2,6 @@ package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
@@ -11,7 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.spbsu.commons.math.vectors.VecTools.multiply;
+import static ru.spbsu.apmath.neuralnetwork.MatrixTools.*;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.printMx;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.readMx;
 
@@ -46,15 +46,8 @@ public class Perceptron {
     this.countOfLayers = dims.length - 1;
     this.layers = new Layer[countOfLayers];
     for (int l = 0; l < countOfLayers; l++) {
-      Vec[] rows = new Vec[dims[l + 1]];
-      for (int i = 0; i < dims[l + 1]; i++) {
-        VecBuilder vecBuilder = new VecBuilder(dims[l]);
-        for (int j = 0; j < dims[l]; j++) {
-          vecBuilder.append(Math.random());
-        }
-        rows[i] = vecBuilder.build();
-      }
-      Mx w = new RowsVecArrayMx(rows);
+      Mx w = new VecBasedMx(dims[l + 1], dims[l]);
+      fill(w, makeRandomDouble);
       layers[l] = new Layer(w, getActivateFunction());
     }
   }
@@ -69,7 +62,7 @@ public class Perceptron {
 
   public void save(String pathToFolder) throws IOException {
     for (int i = 0; i < countOfLayers; i++) {
-      File file = new File(String.format("%s%smatrix%s.txt", pathToFolder, System.lineSeparator(), i));
+      File file = new File(String.format("%s/matrix%s.txt", pathToFolder, i));
       printMx(layers[i].getWeights(), file);
     }
   }
@@ -89,17 +82,8 @@ public class Perceptron {
       logLikelihood = 0;
       Mx[] deltaWMxes = new Mx[countOfLayers];
       for (int i = 0; i < countOfLayers; i++) {
-        int rows = layers[i].getWeights().rows();
-        int columns = layers[i].getWeights().columns();
-        Vec[] vecRows = new Vec[rows];
-        for (int j = 0; j < rows; j++) {
-          VecBuilder vecBuilder = new VecBuilder();
-          for (int h = 0; h < columns; h++) {
-            vecBuilder.append(0);
-          }
-          vecRows[j] = vecBuilder.build();
-        }
-        deltaWMxes[i] = new RowsVecArrayMx(vecRows);
+        deltaWMxes[i] = new VecBasedMx(layers[i].getWeights().rows(), layers[i].getWeights().columns());
+        fill(deltaWMxes[i], makeZeroDouble);
       }
 
       for (int d = 0; d < countOfLearningSamples; d++) {
@@ -115,14 +99,14 @@ public class Perceptron {
       System.out.println("Log likelihood function: " + logLikelihood);
 
       for (int i = 0; i < countOfLayers; i++)
-        append(layers[i].getWeights(), deltaWMxes[i]);
+        sum(layers[i].getWeights(), deltaWMxes[i]);
     }
   }
 
   private Mx[] addToDeltaWMxes(Mx[] deltaWMxes, double w, Vec learningVec, Vec[] deltas) {
-    deltaWMxes[0] = sum(scale(multiplyVecs(deltas[0], learningVec), w), deltaWMxes[0]);
+    deltaWMxes[0] = sum(multiplyWithDouble(multiplyVecs(deltas[0], learningVec), w), deltaWMxes[0]);
     for (int i = 1; i < countOfLayers; i++)
-      deltaWMxes[i] = sum(scale(multiplyVecs(deltas[i], layers[i - 1].getOutputs()), w), deltaWMxes[i]);
+      deltaWMxes[i] = sum(multiplyWithDouble(multiplyVecs(deltas[i], layers[i - 1].getOutputs()), w), deltaWMxes[i]);
     return deltaWMxes;
   }
 
@@ -162,15 +146,5 @@ public class Perceptron {
         return 1 / (1 + Math.exp(-1 * x));
       }
     };
-  }
-
-  private Mx multiplyVecs(Vec a, Vec b) {
-    Mx result = new VecBasedMx(a.dim(), b.dim());
-    for (int i = 0; i < result.rows(); i++) {
-      for (int j = 0; j < result.columns(); j++) {
-        result.set(i, j, a.get(i) * b.get(j));
-      }
-    }
-    return result;
   }
 }
