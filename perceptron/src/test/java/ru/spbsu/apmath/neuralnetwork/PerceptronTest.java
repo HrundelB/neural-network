@@ -44,6 +44,6 @@ public class PerceptronTest {
     System.out.println("result for -1 (not learned): " + perceptron.calculate(new ArrayVec(5, 4.5)));
     System.out.println("result for +1 (not learned): " + perceptron.calculate(new ArrayVec(0, 0)));
     System.out.println("result for middle (not learned): " + perceptron.calculate(new ArrayVec(2, 2)));
-    perceptron.save("src/test/data/perceptron");
+    perceptron.save("perceptron/src/test/data/perceptron");
   }
 }

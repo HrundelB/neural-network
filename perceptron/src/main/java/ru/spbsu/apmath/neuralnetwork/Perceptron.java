@@ -2,6 +2,7 @@ package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.util.Random;
 
 import static com.spbsu.commons.math.vectors.VecTools.multiply;
-import static ru.spbsu.apmath.neuralnetwork.MatrixTools.*;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.printMx;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.readMx;
 
@@ -47,7 +47,7 @@ public class Perceptron {
     this.layers = new Layer[countOfLayers];
     for (int l = 0; l < countOfLayers; l++) {
       Mx w = new VecBasedMx(dims[l + 1], dims[l]);
-      fill(w, makeRandomDouble);
+      fillWithRandom(w);
       layers[l] = new Layer(w, getActivateFunction());
     }
   }
@@ -83,7 +83,7 @@ public class Perceptron {
       Mx[] deltaWMxes = new Mx[countOfLayers];
       for (int i = 0; i < countOfLayers; i++) {
         deltaWMxes[i] = new VecBasedMx(layers[i].getWeights().rows(), layers[i].getWeights().columns());
-        fill(deltaWMxes[i], makeZeroDouble);
+        VecTools.fill(deltaWMxes[i], 0);
       }
 
       for (int d = 0; d < countOfLearningSamples; d++) {
@@ -99,14 +99,14 @@ public class Perceptron {
       System.out.println("Log likelihood function: " + logLikelihood);
 
       for (int i = 0; i < countOfLayers; i++)
-        sum(layers[i].getWeights(), deltaWMxes[i]);
+        VecTools.append(layers[i].getWeights(), deltaWMxes[i]);
     }
   }
 
   private Mx[] addToDeltaWMxes(Mx[] deltaWMxes, double w, Vec learningVec, Vec[] deltas) {
-    deltaWMxes[0] = sum(multiplyWithDouble(multiplyVecs(deltas[0], learningVec), w), deltaWMxes[0]);
+    deltaWMxes[0] = VecTools.sum(VecTools.scale(VecTools.outer(deltas[0], learningVec), w), deltaWMxes[0]);
     for (int i = 1; i < countOfLayers; i++)
-      deltaWMxes[i] = sum(multiplyWithDouble(multiplyVecs(deltas[i], layers[i - 1].getOutputs()), w), deltaWMxes[i]);
+      deltaWMxes[i] = VecTools.sum(VecTools.scale(VecTools.outer(deltas[i], layers[i - 1].getOutputs()), w), deltaWMxes[i]);
     return deltaWMxes;
   }
 
@@ -146,5 +146,13 @@ public class Perceptron {
         return 1 / (1 + Math.exp(-1 * x));
       }
     };
+  }
+
+  private void fillWithRandom(Mx mx) {
+    for (int i = 0; i < mx.rows(); i++) {
+      for (int j = 0; j < mx.columns(); j++) {
+        mx.set(i, j, Math.random());
+      }
+    }
   }
 }
