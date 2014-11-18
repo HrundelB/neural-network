@@ -74,8 +74,8 @@ public class Perceptron {
     return layers[countOfLayers - 1].getOutputs().get(0);
   }
 
-  public void backPropagation(double w, Vec[] learning, int[] answers, int numberOfSteps) {
-    int countOfLearningSamples = learning.length;
+  public void backPropagation(double w, Mx learning, Vec answers, int numberOfSteps) {
+    int countOfLearningSamples = learning.rows();
     System.out.println("Learning...");
     for (int k = 0; k < numberOfSteps; k++) {
 
@@ -88,18 +88,20 @@ public class Perceptron {
 
       for (int d = 0; d < countOfLearningSamples; d++) {
         int index = new Random().nextInt(countOfLearningSamples);
-        this.calculate(learning[index]);
+        this.calculate(learning.row(index));
         Vec[] deltas = new Vec[countOfLayers];
-        deltas[countOfLayers - 1] = getDeltaForLastLayer(answers[index]);
+        deltas[countOfLayers - 1] = getDeltaForLastLayer(answers.get(index));
         for (int l = countOfLayers - 2; l >= 0; l--) {
           deltas[l] = getDeltaForLayer(l, deltas[l + 1]);
         }
-        deltaWMxes = addToDeltaWMxes(deltaWMxes, w, learning[d], deltas);
+        deltaWMxes = addToDeltaWMxes(deltaWMxes, w, learning.row(d), deltas);
       }
       System.out.println("Log likelihood function: " + logLikelihood);
 
       for (int i = 0; i < countOfLayers; i++)
         VecTools.append(layers[i].getWeights(), deltaWMxes[i]);
+
+      w = w * 0.8;
     }
   }
 
@@ -110,7 +112,7 @@ public class Perceptron {
     return deltaWMxes;
   }
 
-  private Vec getDeltaForLastLayer(int answer) {
+  private Vec getDeltaForLastLayer(double answer) {
     double result;
     double o = layers[countOfLayers - 1].getOutputs().get(0);
     if (answer == 1) {
