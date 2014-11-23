@@ -2,7 +2,6 @@ package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Trans;
 
 import java.io.File;
@@ -19,13 +18,15 @@ import static ru.spbsu.apmath.neuralnetwork.StringTools.readMx;
  */
 public class Perceptron extends Trans.Stub {
 
-  private Mx[] weightMxes;
-  private Vec[] outputs;
-  private Function activationFunction;
+  private final Mx[] weightMxes;
+  private final Vec[] outputs;
+  private final Vec[] sums;
+  private final Function activationFunction;
 
   public Perceptron(Mx[] mxes, Function activationFunction) {
     this.weightMxes = mxes;
     this.outputs = new Vec[mxes.length];
+    this.sums = new Vec[mxes.length];
     for (int i = 0; i < mxes.length; i++) {
       if (i < mxes.length - 1 && mxes[i].rows() != mxes[i + 1].columns()) {
         throw new IllegalArgumentException(
@@ -48,9 +49,12 @@ public class Perceptron extends Trans.Stub {
 
   @Override
   public Vec trans(Vec x) {
-    outputs[0] = functionOfVector(multiply(weightMxes[0], x), activationFunction);
-    for (int i = 1; i < weightMxes.length; i++)
-      outputs[i] = functionOfVector(multiply(weightMxes[i], outputs[i - 1]), activationFunction);
+    sums[0] = multiply(weightMxes[0], x);
+    outputs[0] = activationFunction.vecValue(sums[0]);
+    for (int i = 1; i < weightMxes.length; i++) {
+      sums[i] = multiply(weightMxes[i], outputs[i - 1]);
+      outputs[i] = activationFunction.vecValue(sums[i]);
+    }
     return outputs[outputs.length - 1];
   }
 
@@ -62,12 +66,16 @@ public class Perceptron extends Trans.Stub {
     return outputs[index];
   }
 
-  private Vec functionOfVector(Vec m, Function function) {
-    Vec result = new ArrayVec(m.dim());
-    for (int i = 0; i < m.dim(); i++) {
-      result.set(i, function.call(m.get(i)));
-    }
-    return result;
+  public Vec getSum(int index) {
+    return sums[index];
+  }
+
+  public int getCountOfLayers() {
+    return weightMxes.length;
+  }
+
+  public Function getActivationFunction() {
+    return activationFunction;
   }
 
   public static Perceptron getPerceptronByFiles(Function activationFunction, String... paths) throws IOException {

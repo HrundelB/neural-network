@@ -1,5 +1,6 @@
 package ru.spbsu.apmath.neuralnetwork;
 
+import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -19,28 +20,30 @@ import java.io.IOException;
  */
 public class PerceptronTest {
   public static VecDataSet dataSet;
-  public static L2 l2;
+  public static Logit logit;
 
   @BeforeClass
   public static void init() throws IOException {
     Pool<?> pool = DataTools.loadFromFeaturesTxt("jmll/ml/src/test/resources/com/spbsu/ml/features.txt.gz");
     dataSet = pool.vecData();
-    l2 = pool.target(L2.class);
-    for (int i = 0; i < l2.target().dim(); i++) {
-      if (l2.target().get(i) > 0.07) {
-        l2.target().set(i, 1);
-      } else {
-        l2.target().set(i, -1);
-      }
-    }
-    System.out.println(String.format("dataSet: rows - %s, columns - %s; answers: %s", dataSet.data().rows(),
-            dataSet.data().columns(), l2.target().dim()));
+    logit = pool.target(Logit.class);
+    System.out.println(String.format("dataSet: rows - %s, columns - %s", dataSet.data().rows(),
+            dataSet.data().columns()));
   }
 
   @Test
   public void backPropagationTest() throws IOException {
-    BackPropagation backPropagation = new BackPropagation(new int[]{50, 100, 1}, getActivateFunction(), 0.00008, 20);
-    Perceptron perceptron = backPropagation.fit(dataSet, l2);
+    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1}, getActivateFunction(), 0.00008, 20);
+    final Action<Perceptron> action = new Action<Perceptron>() {
+      @Override
+      public void invoke(Perceptron perceptron) {
+        System.out.println(String.format("Log likelihood: %s", logit.value(perceptron.transAll(dataSet.data()).col(0))));
+        System.out.println(perceptron.getWeightMx(0).row(10));
+      }
+    };
+    backPropagation.addListener(action);
+    System.out.println("Learning...");
+    backPropagation.fit(dataSet, logit);
     backPropagation.save("perceptron/src/test/data/perceptron");
   }
 
