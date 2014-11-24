@@ -64,4 +64,13 @@ public class StringTools {
     bufferedReader.close();
     return new RowsVecArrayMx(rows.toArray(new Vec[]{}));
   }
+
+  public static String printVec(Vec vec) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < vec.dim(); i++) {
+      sb.append(vec.get(i)).append(' ');
+    }
+    sb.delete(sb.length() - 1, sb.length());
+    return sb.toString();
+  }
 }

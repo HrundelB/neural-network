@@ -1,7 +1,6 @@
 package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.func.Action;
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
@@ -11,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,53 +21,43 @@ import java.io.IOException;
 public class PerceptronTest {
   public static VecDataSet dataSet;
   public static Logit logit;
+  public static Vec answers;
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("jmll/ml/src/test/resources/com/spbsu/ml/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(Logit.class);
+    answers = pool.target(L2.class).target();
     System.out.println(String.format("dataSet: rows - %s, columns - %s", dataSet.data().rows(),
             dataSet.data().columns()));
   }
 
   @Test
+  public void perceptronTransTest() throws IOException {
+    Perceptron perceptron = Perceptron.getPerceptronByFiles(getActivateFunction(),
+            "src/test/data/perceptron/matrix0.txt",
+            "src/test/data/perceptron/matrix1.txt");
+    for (int i = 0; i < 10; i++) {
+      int index = new Random().nextInt(dataSet.length());
+      double result = perceptron.trans(dataSet.at(index)).get(0);
+      System.out.println(String.format("Answer: %s, result: %s", answers.get(index), result));
+    }
+  }
+
+  @Test
   public void backPropagationTest() throws IOException {
-    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1}, getActivateFunction(), 0.00008, 20);
+    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1}, getActivateFunction(), 0.09, 20);
     final Action<Perceptron> action = new Action<Perceptron>() {
       @Override
       public void invoke(Perceptron perceptron) {
         System.out.println(String.format("Log likelihood: %s", logit.value(perceptron.transAll(dataSet.data()).col(0))));
-        System.out.println(perceptron.getWeightMx(0).row(10));
       }
     };
     backPropagation.addListener(action);
     System.out.println("Learning...");
     backPropagation.fit(dataSet, logit);
-    backPropagation.save("perceptron/src/test/data/perceptron");
-  }
-
-
-  @Test
-  public void calculateTest() throws IOException {
-    Perceptron perceptron = Perceptron.getPerceptronByFiles(getActivateFunction(),
-            "perceptron/src/test/data/perceptron/matrix0.txt",
-            "perceptron/src/test/data/perceptron/matrix1.txt");
-
-    System.out.println("On learning data set:");
-//    for (int i = 0; i < 1000; i += 100) {
-//      double result = perceptron.calculate(dataSet.row(i));
-//      System.out.println(String.format("[row %s] answer: %s, result: %s", i, answers.get(i), result));
-//    }
-
-    System.out.println("On test data set:");
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("jmll/ml/src/test/resources/com/spbsu/ml/featuresTest.txt.gz");
-    Mx testDataSet = pool.vecData().data();
-    Vec testAnswers = pool.target(L2.class).target();
-//    for (int i = 0; i < 1000; i += 100) {
-//      double result = perceptron.calculate(testDataSet.row(i));
-//      System.out.println(String.format("[row %s] answer: %s, result: %s", i, testAnswers.get(i), result));
-//    }
+    backPropagation.save("src/test/data/perceptron");
   }
 
   private Function getActivateFunction() {
@@ -79,7 +69,7 @@ public class PerceptronTest {
 
       @Override
       public double call(double x) {
-        return 1 / (1 + Math.exp(-1 * x));
+        return 1. / (1. + Math.exp(-x));
       }
     };
   }

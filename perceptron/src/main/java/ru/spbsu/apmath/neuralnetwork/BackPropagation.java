@@ -6,6 +6,8 @@ import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.methods.VecOptimization;
 
@@ -16,7 +18,7 @@ import java.util.Random;
 /**
  * Created by afonin.s on 21.11.2014.
  */
-public class BackPropagation<Loss extends TargetFuncC1> extends WeakListenerHolderImpl<Perceptron>
+public class BackPropagation<Loss extends TargetFunc & FuncC1> extends WeakListenerHolderImpl<Perceptron>
         implements VecOptimization<Loss> {
 
   private final double w;
@@ -47,7 +49,7 @@ public class BackPropagation<Loss extends TargetFuncC1> extends WeakListenerHold
         Vec delta = loss.gradient(output);
         for (int l = perceptron.getCountOfLayers() - 1; l > 0; l--) {
           VecTools.scale(delta, perceptron.getActivationFunction().vecDerivative(perceptron.getSum(l)));
-          VecTools.append(perceptron.getWeightMx(l),VecTools.scale(VecTools.outer(delta, perceptron.getOutput(l - 1)), w));
+          VecTools.append(perceptron.getWeightMx(l), VecTools.scale(VecTools.outer(delta, perceptron.getOutput(l - 1)), w));
           delta = MxTools.multiply(MxTools.transpose(perceptron.getWeightMx(l)), delta);
         }
         VecTools.scale(delta, perceptron.getActivationFunction().vecDerivative(perceptron.getSum(0)));
@@ -66,9 +68,10 @@ public class BackPropagation<Loss extends TargetFuncC1> extends WeakListenerHold
   }
 
   private void fillWithRandom(Mx mx) {
+    Random random = new Random();
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++) {
-        mx.set(i, j, Math.random());
+        mx.set(i, j, random.nextDouble() / 10);
       }
     }
   }

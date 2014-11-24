@@ -41,7 +41,7 @@ public class StringToolsTest {
   @Test
   public void writeMxToFileTest() throws IOException {
     Mx original = getMx();
-    File file = new File("perceptron/src/test/data/perceptron/matrixtest1.txt");
+    File file = new File("src/test/data/perceptron/matrixtest1.txt");
     printMx(original, file);
     Mx newMx = readMx(file);
     assertThat(newMx, mxEqualsTo(original));
