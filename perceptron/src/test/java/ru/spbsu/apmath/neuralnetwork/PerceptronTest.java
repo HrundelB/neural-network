@@ -25,7 +25,7 @@ public class PerceptronTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(Logit.class);
     answers = pool.target(L2.class).target();
@@ -36,8 +36,8 @@ public class PerceptronTest {
   @Test
   public void perceptronTransTest() throws IOException {
     Perceptron perceptron = Perceptron.getPerceptronByFiles(getActivateFunction(),
-            "src/test/data/perceptron/matrix0.txt",
-            "src/test/data/perceptron/matrix1.txt");
+            "perceptron/src/test/data/perceptron/matrix0.txt",
+            "perceptron/src/test/data/perceptron/matrix1.txt");
     for (int i = 0; i < 10; i++) {
       int index = new Random().nextInt(dataSet.length());
       double result = perceptron.trans(dataSet.at(index)).get(0);
@@ -47,7 +47,8 @@ public class PerceptronTest {
 
   @Test
   public void backPropagationTest() throws IOException {
-    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1}, getActivateFunction(), 0.09, 20);
+    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1},
+            getActivateFunction(), 0.000002, 10);
     final Action<Perceptron> action = new Action<Perceptron>() {
       @Override
       public void invoke(Perceptron perceptron) {
@@ -57,7 +58,7 @@ public class PerceptronTest {
     backPropagation.addListener(action);
     System.out.println("Learning...");
     backPropagation.fit(dataSet, logit);
-    backPropagation.save("src/test/data/perceptron");
+    backPropagation.save("perceptron/src/test/data/perceptron");
   }
 
   private Function getActivateFunction() {

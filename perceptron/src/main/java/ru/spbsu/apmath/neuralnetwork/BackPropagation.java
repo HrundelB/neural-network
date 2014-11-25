@@ -41,6 +41,7 @@ public class BackPropagation<Loss extends TargetFunc & FuncC1> extends WeakListe
 
   @Override
   public Perceptron fit(VecDataSet learn, Loss loss) {
+    double w = this.w;
     for (int k = 0; k < numberOfSteps; k++) {
       for (int d = 0; d < learn.length(); d++) {
         int index = new Random().nextInt(learn.length());
@@ -56,6 +57,7 @@ public class BackPropagation<Loss extends TargetFunc & FuncC1> extends WeakListe
         VecTools.append(perceptron.getWeightMx(0), VecTools.scale(VecTools.outer(delta, learn.at(index)), w));
       }
       invoke(perceptron);
+      w = w / 1.07;
     }
     return perceptron;
   }
