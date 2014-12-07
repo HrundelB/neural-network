@@ -44,9 +44,15 @@ public class BackPropagation<Loss extends TargetFunc & FuncC1> extends WeakListe
       fillWithRandom(weights[l]);
     }
     Perceptron perceptron = new Perceptron(weights, activationFunction);
+    boolean[] flags = new boolean[learn.length()];
+    resetFlags(flags);
     for (int k = 0; k < numberOfSteps; k++) {
-      for (int d = 0; d < learn.length(); d++) {
+      int n = 0;
+      System.out.println("STEP: " + k);
+      while(!allFlagsAreTrue(flags)) {
+        n++;
         int index = new Random().nextInt(learn.length());
+        flags[index] = true;
 
         Vec output = perceptron.trans(learn.at(index));
 
@@ -69,11 +75,28 @@ public class BackPropagation<Loss extends TargetFunc & FuncC1> extends WeakListe
 
         perceptron = new Perceptron(weights, activationFunction);
       }
+      System.out.println(n + " ITERATIONS");
+      resetFlags(flags);
 
       invoke(perceptron);
       w = w / 1.07;
     }
     return perceptron;
+  }
+
+  private void resetFlags(boolean[] flags) {
+    for (int i = 0; i < flags.length; i++) {
+      flags[i] = false;
+    }
+  }
+
+  private boolean allFlagsAreTrue(boolean[] flags) {
+    for (int i = 0; i < flags.length; i++) {
+      if (!flags[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void fillWithRandom(Mx mx) {
