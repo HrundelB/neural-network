@@ -57,8 +57,8 @@ public class PerceptronTest {
     };
     backPropagation.addListener(action);
     System.out.println("Learning...");
-    backPropagation.fit(dataSet, logit);
-    backPropagation.save("perceptron/src/test/data/perceptron");
+    Perceptron perceptron = backPropagation.fit(dataSet, logit);
+    perceptron.save("perceptron/src/test/data/perceptron");
   }
 
   private Function getActivateFunction() {

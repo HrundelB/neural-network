@@ -25,7 +25,7 @@ public class Perceptron extends Trans.Stub {
 
   public Perceptron(Mx[] mxes, Function activationFunction) {
     this.weightMxes = mxes;
-    this.outputs = new Vec[mxes.length];
+    this.outputs = new Vec[mxes.length + 1];
     this.sums = new Vec[mxes.length];
     for (int i = 0; i < mxes.length; i++) {
       if (i < mxes.length - 1 && mxes[i].rows() != mxes[i + 1].columns()) {
@@ -49,33 +49,27 @@ public class Perceptron extends Trans.Stub {
 
   @Override
   public Vec trans(Vec x) {
-    sums[0] = multiply(weightMxes[0], x);
-    outputs[0] = activationFunction.vecValue(sums[0]);
-    for (int i = 1; i < weightMxes.length; i++) {
-      sums[i] = multiply(weightMxes[i], outputs[i - 1]);
-      outputs[i] = activationFunction.vecValue(sums[i]);
+    outputs[0] = x;
+    for (int i = 0; i < weightMxes.length; i++) {
+      sums[i] = multiply(weightMxes[i], outputs[i]);
+      outputs[i + 1] = activationFunction.vecValue(sums[i]);
     }
     return outputs[outputs.length - 1];
   }
 
-  public Mx getWeightMx(int index) {
-    return weightMxes[index];
-  }
-
   public Vec getOutput(int index) {
-    return outputs[index];
+    return outputs[index + 1];
   }
 
   public Vec getSum(int index) {
     return sums[index];
   }
 
-  public int getCountOfLayers() {
-    return weightMxes.length;
-  }
-
-  public Function getActivationFunction() {
-    return activationFunction;
+  public void save(String pathToFolder) throws IOException {
+    for (int i = 0; i < weightMxes.length; i++) {
+      File file = new File(String.format("%s/matrix%s.txt", pathToFolder, i));
+      StringTools.printMx(weightMxes[i], file);
+    }
   }
 
   public static Perceptron getPerceptronByFiles(Function activationFunction, String... paths) throws IOException {
