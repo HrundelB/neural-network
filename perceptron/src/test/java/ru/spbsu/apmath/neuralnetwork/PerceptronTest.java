@@ -48,11 +48,16 @@ public class PerceptronTest {
   @Test
   public void backPropagationTest() throws IOException {
     BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1},
-            getActivateFunction(), 0.000002, 10);
+            getActivateFunction(), 10);
     final Action<Perceptron> action = new Action<Perceptron>() {
+      private long time = System.currentTimeMillis();
+
       @Override
       public void invoke(Perceptron perceptron) {
-        System.out.println(String.format("Log likelihood: %s", logit.value(perceptron.transAll(dataSet.data()).col(0))));
+        long now = System.currentTimeMillis();
+        System.out.println(String.format("Log likelihood: %s (time: %s ms)",
+                logit.value(perceptron.transAll(dataSet.data()).col(0)), now - time));
+        time = now;
       }
     };
     backPropagation.addListener(action);
@@ -61,8 +66,8 @@ public class PerceptronTest {
     perceptron.save("perceptron/src/test/data/perceptron");
   }
 
-  private Function getActivateFunction() {
-    return new Function() {
+  private FunctionC1 getActivateFunction() {
+    return new FunctionC1() {
       @Override
       public double derivative(double x) {
         return call(x) - call(x) * call(x);
