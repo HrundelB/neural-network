@@ -79,4 +79,12 @@ public class Perceptron extends Trans.Stub {
     }
     return new Perceptron(mxes, activationFunction);
   }
+
+  public int depth() {
+    return weightMxes.length;
+  }
+
+  public Mx weights(int i) {
+    return weightMxes[i];
+  }
 }

@@ -28,12 +28,16 @@ public class Logit extends FuncC1.Stub implements TargetFunc {
   public Vec gradient(Vec x) {
     Vec result = new ArrayVec(x.dim());
     for (int i = 0; i < x.dim(); i++) {
-      if (target.get(i) > 0.07) // positive example
+      if (isPositive(i)) // positive example
         result.set(i, 1. / x.get(i));
       else // negative
         result.set(i, -1. / (1. - x.get(i)));
     }
     return result;
+  }
+
+  public boolean isPositive(int i) {
+    return target.get(i) > 0.07;
   }
 
   @Override
@@ -45,7 +49,7 @@ public class Logit extends FuncC1.Stub implements TargetFunc {
   public double value(Vec x) {
     double result = 0;
     for (int i = 0; i < x.dim(); i++) {
-      if (target.get(i) > 0.07) // positive example
+      if (isPositive(i)) // positive example
         result += log(x.get(i));
       else // negative
         result += log(1 - x.get(i));
