@@ -7,17 +7,13 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.VecOptimization;
 
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.MxTools.multiply;
-import static com.spbsu.commons.math.vectors.MxTools.transpose;
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.spbsu.commons.math.vectors.VecTools.append;
+import static com.spbsu.commons.math.vectors.VecTools.scale;
 
 /**
  * Created by afonin.s on 21.11.2014.
@@ -46,32 +42,41 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       fillWithRandom(weights[l]);
     }
     Perceptron perceptron = new Perceptron(weights, activationFunction);
-    for (int k = 0; k < 10 * numberOfSteps; k++) {
-      for (int t = 0; t < 1000; t++) {
+    for (int k = 0; k < 100 * numberOfSteps; k++) {
+      for (int t = 0; t < learn.length(); t++) {
         int index = new Random().nextInt(learn.length());
 
         final Vec learningVec = learn.at(index);
         perceptron.trans(learningVec);
         final int depth = perceptron.depth() - 1;
-        final Mx currentWeights = perceptron.weights(depth);
-        final Vec nextWeights = new ArrayVec(currentWeights.columns());
-        if (loss.isPositive(index)) {
-          final Vec output = perceptron.getOutput(depth - 1);
-          double expMS = Math.exp(VecTools.multiply(output, currentWeights.row(0)));
-          for(int i = 0; i < nextWeights.dim(); i++) {
-            nextWeights.set(i, output.get(i)/(1 + expMS));
-          }
-        }
-        else {
-          final Vec output = perceptron.getOutput(depth - 1);
-          double expMS = Math.exp(VecTools.multiply(output, currentWeights.row(0)));
-          for(int i = 0; i < nextWeights.dim(); i++) {
-            nextWeights.set(i, -output.get(i)*expMS/(1 + expMS));
-          }
-        }
 
-        scale(nextWeights, 0.001);
-        append(currentWeights.row(0), nextWeights);
+        final Vec[] deltas = new Vec[depth + 1];
+        for (int l = depth; l >= 0; l-- ) {
+          final Mx currentWeights = perceptron.weights(l);
+          final Mx nextWeights = new VecBasedMx(currentWeights.rows(), currentWeights.columns());
+          final Vec output = perceptron.getOutput(l - 1);
+          deltas[l] = new ArrayVec(currentWeights.rows());
+          for (int j = 0; j < currentWeights.rows(); j++) {
+            double expMS = Math.exp(VecTools.multiply(output, currentWeights.row(j)));
+            if (l == depth) {
+              if (loss.isPositive(index)) {
+                deltas[l].set(j, 1 / (1 + expMS));
+              } else {
+                deltas[l].set(j, -expMS / (1 + expMS));
+              }
+            } else {
+//              System.out.println(String.format("k:%s, t:%s, l:%s, j:%s, depth:%s, currentWeights.col(j):%s, deltas[l+1]:%s",
+//                      k, t, l, j, depth, currentWeights.col(j), deltas[l + 1]));
+              double dt = VecTools.multiply(perceptron.weights(l + 1).col(j), deltas[l + 1]);
+              deltas[l].set(j, dt * expMS / Math.pow(1 + expMS, 2));
+            }
+            for (int i = 0; i < currentWeights.columns(); i++) {
+              nextWeights.set(j, i, output.get(i) * deltas[l].get(j));
+            }
+          }
+          scale(nextWeights, 0.001);
+          append(currentWeights, nextWeights);
+        }
 //
 //        final Mx[] deltaWeigths = new Mx[weights.length];
 //
