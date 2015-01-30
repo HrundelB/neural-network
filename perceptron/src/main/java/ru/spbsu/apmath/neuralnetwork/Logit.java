@@ -6,6 +6,7 @@ import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
+import static com.spbsu.commons.math.vectors.VecTools.multiply;
 import static java.lang.Math.log;
 
 /**
@@ -28,10 +29,11 @@ public class Logit extends FuncC1.Stub implements TargetFunc {
   public Vec gradient(Vec x) {
     Vec result = new ArrayVec(x.dim());
     for (int i = 0; i < x.dim(); i++) {
+      double expMS = Math.exp(x.get(i));
       if (isPositive(i)) // positive example
-        result.set(i, 1. / x.get(i));
+        result.set(i, 1 / (1 + expMS));
       else // negative
-        result.set(i, -1. / (1. - x.get(i)));
+        result.set(i, -expMS / (1 + expMS));
     }
     return result;
   }
