@@ -1,4 +1,4 @@
 *.iml
 target
-src/test/data/perceptron/matrix*.txt
+src/test/data/perceptron/matrixtest*.txt
 .idea
