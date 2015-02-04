@@ -39,8 +39,8 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       weights[l] = new VecBasedMx(dims[l + 1], dims[l]);
       fillWithRandom(weights[l]);
     }
-    Perceptron perceptron = new Perceptron(weights, activationFunction);
-    for (int k = 0; k < 100 * numberOfSteps; k++) {
+    final Perceptron perceptron = new Perceptron(weights, activationFunction);
+    for (int k = 0; k < numberOfSteps; k++) {
       for (int t = 0; t < learn.length(); t++) {
         int index = new Random().nextInt(learn.length());
 
@@ -48,69 +48,21 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
         perceptron.trans(learningVec);
         final int depth = perceptron.depth() - 1;
 
-        final Vec[] deltas = new Vec[depth + 1];
+        Vec delta;
 
-        deltas[depth] = loss.gradient(perceptron.getSum(depth), index);
-        append(perceptron.weights(depth), scale(outer(deltas[depth], perceptron.getOutput(depth - 1)), 0.001));
+        delta = loss.gradient(perceptron.getSum(depth), index);
+        append(perceptron.weights(depth), scale(outer(delta, perceptron.getOutput(depth - 1)), 0.01));
 
         for (int l = depth - 1; l >= 0; l--) {
-          deltas[l] = function.vecValue(perceptron.getSum(l));
-          scale(deltas[l], MxTools.multiply(MxTools.transpose(perceptron.weights(l + 1)), deltas[l + 1]));
-          append(perceptron.weights(l), scale(outer(deltas[l], perceptron.getOutput(l - 1)), 0.001));
+          delta = MxTools.multiply(MxTools.transpose(perceptron.weights(l + 1)), delta);
+          scale(delta, function.vecValue(perceptron.getSum(l)));
+          append(perceptron.weights(l), scale(outer(delta, perceptron.getOutput(l - 1)), 0.1));
         }
-
-        //              System.out.println(String.format("k:%s, t:%s, l:%s, j:%s, depth:%s, currentWeights.col(j):%s, deltas[l+1]:%s",
-//                      k, t, l, j, depth, currentWeights.col(j), deltas[l + 1]));
-//
-//        final Mx[] deltaWeigths = new Mx[weights.length];
-//
-//
-//        Vec delta = loss.gradient(output);
-//        for (int l = weights.length - 1; l >= 0; l--) {
-//          scale(delta, activationFunction.vecDerivative(perceptron.getSum(l)));
-//          deltaWeigths[l] = outer(delta, perceptron.getOutput(l - 1));
-//          delta = multiply(transpose(weights[l]), delta);
-//        }
-//
-//        Function function = new Function() {
-//          @Override
-//          public double call(double x) {
-//            Mx[] tmpMxes = new Mx[deltaWeigths.length];
-//            for (int l = 0; l < deltaWeigths.length; l++) {
-//              tmpMxes[l] = new VecBasedMx(deltaWeigths[l]);
-//              scale(tmpMxes[l], x);
-//            }
-//            return new Perceptron(tmpMxes, activationFunction).trans(learningVec).get(0);
-//          }
-//        };
-//        double w = GoldenSectionSearch.searchMax(0, 1, function, 0.00000001);
-//
-//        for (int l = 0; l < weights.length; l++) {
-//          scale(deltaWeigths[l], w);
-//          append(weights[l], deltaWeigths[l]);
-//        }
-//
-//        perceptron = new Perceptron(weights, activationFunction);
       }
 
       invoke(perceptron);
     }
     return perceptron;
-  }
-
-  private void resetFlags(boolean[] flags) {
-    for (int i = 0; i < flags.length; i++) {
-      flags[i] = false;
-    }
-  }
-
-  private boolean allFlagsAreTrue(boolean[] flags) {
-    for (int i = 0; i < flags.length; i++) {
-      if (!flags[i]) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private void fillWithRandom(Mx mx) {

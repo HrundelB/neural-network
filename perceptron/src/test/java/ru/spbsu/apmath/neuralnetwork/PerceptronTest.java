@@ -48,15 +48,18 @@ public class PerceptronTest {
   @Test
   public void backPropagationTest() throws IOException {
     BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1},
-            getActivateFunction(), 10);
+            getActivateFunction(), 10000);
     final Action<Perceptron> action = new Action<Perceptron>() {
       private long time = System.currentTimeMillis();
+      private double max = -100000;
 
       @Override
       public void invoke(Perceptron perceptron) {
         long now = System.currentTimeMillis();
-        System.out.println(String.format("Log likelihood: %s (time: %s ms)",
-                logit.value(perceptron.transAll(dataSet.data()).col(0)), now - time));
+        double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
+        if (l > max)
+          max = l;
+        System.out.println(String.format("Log likelihood: %s (time: %s ms) - max: %s", l, now - time, max));
         time = now;
       }
     };
