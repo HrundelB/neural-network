@@ -41,28 +41,32 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
     }
     final Perceptron perceptron = new Perceptron(weights, activationFunction);
     for (int k = 0; k < numberOfSteps; k++) {
-      for (int t = 0; t < learn.length(); t++) {
-        int index = new Random().nextInt(learn.length());
-
-        final Vec learningVec = learn.at(index);
-        perceptron.trans(learningVec);
-        final int depth = perceptron.depth() - 1;
-
-        Vec delta;
-
-        delta = loss.gradient(perceptron.getSum(depth), index);
-        append(perceptron.weights(depth), scale(outer(delta, perceptron.getOutput(depth - 1)), 0.01));
-
-        for (int l = depth - 1; l >= 0; l--) {
-          delta = MxTools.multiply(MxTools.transpose(perceptron.weights(l + 1)), delta);
-          scale(delta, function.vecValue(perceptron.getSum(l)));
-          append(perceptron.weights(l), scale(outer(delta, perceptron.getOutput(l - 1)), 0.1));
-        }
-      }
+      step(learn, loss, perceptron);
 
       invoke(perceptron);
     }
     return perceptron;
+  }
+
+  private void step(VecDataSet learn, Loss loss, Perceptron perceptron) {
+    for (int t = 0; t < learn.length(); t++) {
+      int index = new Random().nextInt(learn.length());
+
+      final Vec learningVec = learn.at(index);
+      perceptron.trans(learningVec);
+      final int depth = perceptron.depth() - 1;
+
+      Vec delta;
+
+      delta = loss.gradient(perceptron.getSum(depth), index);
+      append(perceptron.weights(depth), scale(outer(delta, perceptron.getOutput(depth - 1)), 0.01));
+
+      for (int l = depth - 1; l >= 0; l--) {
+        delta = MxTools.multiply(MxTools.transpose(perceptron.weights(l + 1)), delta);
+        scale(delta, function.vecValue(perceptron.getSum(l)));
+        append(perceptron.weights(l), scale(outer(delta, perceptron.getOutput(l - 1)), 0.01));
+      }
+    }
   }
 
   private void fillWithRandom(Mx mx) {

@@ -2,6 +2,7 @@ package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Trans;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import static ru.spbsu.apmath.neuralnetwork.StringTools.readMx;
  * Date: 06.10.2014
  * Time: 22:23
  */
-public class Perceptron extends Trans.Stub {
+public class Perceptron extends Trans.Stub implements Cloneable {
 
   private final Mx[] weightMxes;
   private final Vec[] outputs;
@@ -86,5 +87,14 @@ public class Perceptron extends Trans.Stub {
 
   public Mx weights(int i) {
     return weightMxes[i];
+  }
+
+  @Override
+  protected Perceptron clone() {
+    Mx[] mxes = new Mx[weightMxes.length];
+    for (int i = 0; i < mxes.length; i++) {
+      mxes[i] = new VecBasedMx(weightMxes[i]);
+    }
+    return new Perceptron(mxes, activationFunction);
   }
 }

@@ -2,15 +2,16 @@ package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
-import com.spbsu.ml.loss.L2;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Random;
+
+import static com.spbsu.commons.math.vectors.VecTools.distance;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,17 +21,24 @@ import java.util.Random;
  */
 public class PerceptronTest {
   public static VecDataSet dataSet;
+  public static VecDataSet testDataSet;
   public static Logit logit;
-  public static Vec answers;
+  public static Logit testLogit;
 
   @BeforeClass
   public static void init() throws IOException {
     Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(Logit.class);
-    answers = pool.target(L2.class).target();
+
+    Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
+    testDataSet = testPool.vecData();
+    testLogit = testPool.target(Logit.class);
+
     System.out.println(String.format("dataSet: rows - %s, columns - %s", dataSet.data().rows(),
             dataSet.data().columns()));
+    System.out.println(String.format("testDataSet: rows - %s, columns - %s", testDataSet.data().rows(),
+            testDataSet.data().columns()));
   }
 
   @Test
@@ -38,11 +46,7 @@ public class PerceptronTest {
     Perceptron perceptron = Perceptron.getPerceptronByFiles(getActivateFunction(),
             "perceptron/src/test/data/perceptron/matrix0.txt",
             "perceptron/src/test/data/perceptron/matrix1.txt");
-    for (int i = 0; i < 10; i++) {
-      int index = new Random().nextInt(dataSet.length());
-      double result = perceptron.trans(dataSet.at(index)).get(0);
-      System.out.println(String.format("Answer: %s, result: %s", answers.get(index), result));
-    }
+    System.out.println(String.format("result: %s", testLogit.value(perceptron.transAll(testDataSet.data()).col(0))));
   }
 
   @Test
@@ -51,15 +55,22 @@ public class PerceptronTest {
             getActivateFunction(), 10000);
     final Action<Perceptron> action = new Action<Perceptron>() {
       private long time = System.currentTimeMillis();
-      private double max = -100000;
+      private Perceptron oldPerceptron;
 
       @Override
       public void invoke(Perceptron perceptron) {
+        Vec distances = new ArrayVec(perceptron.depth());
+        if (oldPerceptron != null) {
+          for (int i = 0; i < perceptron.depth(); i++) {
+            distances.set(i, distance(oldPerceptron.weights(i), perceptron.weights(i)));
+          }
+        }
+        oldPerceptron = perceptron.clone();
         long now = System.currentTimeMillis();
         double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
-        if (l > max)
-          max = l;
-        System.out.println(String.format("Log likelihood: %s (time: %s ms) - max: %s", l, now - time, max));
+        double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
+
+        System.out.println(String.format("Log likelihood on learn: %s; on test: %s; distance: %s (time: %s ms)", l, t, distances, now - time));
         time = now;
       }
     };
