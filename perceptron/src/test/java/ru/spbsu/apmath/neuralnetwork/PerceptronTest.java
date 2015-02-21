@@ -1,8 +1,6 @@
 package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.func.Action;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -10,6 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.spbsu.commons.math.vectors.VecTools.distance;
 
@@ -59,10 +59,10 @@ public class PerceptronTest {
 
       @Override
       public void invoke(Perceptron perceptron) {
-        Vec distances = new ArrayVec(perceptron.depth());
+        List<Double> distances = new ArrayList<Double>(perceptron.depth());
         if (oldPerceptron != null) {
           for (int i = 0; i < perceptron.depth(); i++) {
-            distances.set(i, distance(oldPerceptron.weights(i), perceptron.weights(i)));
+            distances.add(distance(oldPerceptron.weights(i), perceptron.weights(i)));
           }
         }
         oldPerceptron = perceptron.clone();

@@ -39,34 +39,47 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       weights[l] = new VecBasedMx(dims[l + 1], dims[l]);
       fillWithRandom(weights[l]);
     }
-    final Perceptron perceptron = new Perceptron(weights, activationFunction);
+    Perceptron perceptron = new Perceptron(weights, activationFunction);
     for (int k = 0; k < numberOfSteps; k++) {
-      step(learn, loss, perceptron);
+      perceptron = step(learn, loss, perceptron);
 
       invoke(perceptron);
     }
     return perceptron;
   }
 
-  private void step(VecDataSet learn, Loss loss, Perceptron perceptron) {
+  private Perceptron step(VecDataSet learn, Loss loss, Perceptron perceptron) {
     for (int t = 0; t < learn.length(); t++) {
       int index = new Random().nextInt(learn.length());
 
+      Perceptron tmpPerceptron = perceptron.clone();
+      for (int i = 0; i < tmpPerceptron.depth(); i++) {
+        Mx mx = tmpPerceptron.weights(i);
+        for (int j = 0; j < mx.rows(); j++) {
+          int k = (int) Math.random() * 10;
+          while (k < mx.columns()) {
+            mx.row(j).set(k, 0);
+            k += 0.1 * mx.columns() + Math.random() * 10;
+          }
+        }
+      }
+
       final Vec learningVec = learn.at(index);
-      perceptron.trans(learningVec);
-      final int depth = perceptron.depth() - 1;
+      tmpPerceptron.trans(learningVec);
+      final int depth = tmpPerceptron.depth() - 1;
 
       Vec delta;
 
-      delta = loss.gradient(perceptron.getSum(depth), index);
-      append(perceptron.weights(depth), scale(outer(delta, perceptron.getOutput(depth - 1)), 0.01));
+      delta = loss.gradient(tmpPerceptron.getSum(depth), index);
+      append(perceptron.weights(depth), scale(outer(delta, tmpPerceptron.getOutput(depth - 1)), 0.01));
 
       for (int l = depth - 1; l >= 0; l--) {
-        delta = MxTools.multiply(MxTools.transpose(perceptron.weights(l + 1)), delta);
-        scale(delta, function.vecValue(perceptron.getSum(l)));
-        append(perceptron.weights(l), scale(outer(delta, perceptron.getOutput(l - 1)), 0.01));
+        delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
+        scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
+        append(perceptron.weights(l), scale(outer(delta, tmpPerceptron.getOutput(l - 1)), 0.01));
       }
     }
+    return perceptron;
   }
 
   private void fillWithRandom(Mx mx) {
