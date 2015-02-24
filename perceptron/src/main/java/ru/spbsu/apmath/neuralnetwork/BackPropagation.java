@@ -53,13 +53,14 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       int index = new Random().nextInt(learn.length());
 
       Perceptron tmpPerceptron = perceptron.clone();
+      int betta = 20;
       for (int i = 0; i < tmpPerceptron.depth(); i++) {
         Mx mx = tmpPerceptron.weights(i);
         for (int j = 0; j < mx.rows(); j++) {
-          int k = (int) Math.random() * 10;
+          int k = (int) Math.random() * betta;
           while (k < mx.columns()) {
             mx.row(j).set(k, 0);
-            k += 0.1 * mx.columns() + Math.random() * 10;
+            k += Math.random() * betta;
           }
         }
       }
@@ -69,14 +70,15 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       final int depth = tmpPerceptron.depth() - 1;
 
       Vec delta;
+      double lambda = 0.003;
 
       delta = loss.gradient(tmpPerceptron.getSum(depth), index);
-      append(perceptron.weights(depth), scale(outer(delta, tmpPerceptron.getOutput(depth - 1)), 0.01));
+      append(perceptron.weights(depth), scale(proj(outer(delta, tmpPerceptron.getOutput(depth - 1)), lambda), 0.001));
 
       for (int l = depth - 1; l >= 0; l--) {
         delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
         scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
-        append(perceptron.weights(l), scale(outer(delta, tmpPerceptron.getOutput(l - 1)), 0.01));
+        append(perceptron.weights(l), scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), lambda), 0.01));
       }
     }
     return perceptron;
@@ -88,6 +90,25 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       for (int j = 0; j < mx.columns(); j++) {
         mx.set(i, j, random.nextGaussian());
       }
+    }
+  }
+
+  private Mx proj(Mx mx, double lambda) {
+    for (int i = 0; i < mx.rows(); i++) {
+      for (int j = 0; j < mx.columns(); j++) {
+        mx.set(i, j, proj(mx.get(i,j), lambda));
+      }
+    }
+    return mx;
+  }
+
+  private double proj(double x, double lambda) {
+    if (Math.abs(x) < lambda) {
+      return 0;
+    } else if (x > lambda) {
+      return x - lambda;
+    } else {
+      return x + lambda;
     }
   }
 
