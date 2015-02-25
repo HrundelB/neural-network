@@ -70,7 +70,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       final int depth = tmpPerceptron.depth() - 1;
 
       Vec delta;
-      double lambda = 0.003;
+      double lambda = 0.0003;
 
       delta = loss.gradient(tmpPerceptron.getSum(depth), index);
       append(perceptron.weights(depth), scale(proj(outer(delta, tmpPerceptron.getOutput(depth - 1)), lambda), 0.001));
@@ -78,7 +78,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       for (int l = depth - 1; l >= 0; l--) {
         delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
         scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
-        append(perceptron.weights(l), scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), lambda), 0.01));
+        append(perceptron.weights(l), scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), lambda), 0.001));
       }
     }
     return perceptron;
@@ -105,7 +105,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
   private double proj(double x, double lambda) {
     if (Math.abs(x) < lambda) {
       return 0;
-    } else if (x > lambda) {
+    } else if (x >= lambda) {
       return x - lambda;
     } else {
       return x + lambda;

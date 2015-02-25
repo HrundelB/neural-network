@@ -51,8 +51,8 @@ public class PerceptronTest {
 
   @Test
   public void backPropagationTest() throws IOException {
-    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 1},
-            getActivateFunction(), 10000);
+    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 50, 100, 50, 1},
+            getActivateFunction(), 100);
     final Action<Perceptron> action = new Action<Perceptron>() {
       private long time = System.currentTimeMillis();
       private Perceptron oldPerceptron;
