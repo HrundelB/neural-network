@@ -9,7 +9,10 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.methods.VecOptimization;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.*;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -22,14 +25,25 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
   private final int numberOfSteps;
   private final int[] dims;
   private final FunctionC1 activationFunction;
+  private final double step;
+  private final double alpha;
+  private final double betta;
+  
+  private final Random random = new FastRandom();
+  private final ExecutorService executorService;
 
-  public BackPropagation(int[] dims, FunctionC1 activationFunction, int numberOfSteps) {
+  public BackPropagation(int[] dims, FunctionC1 activationFunction, int numberOfSteps, double step, double alpha,
+                         double betta) {
     if (dims.length < 2) {
       throw new IllegalArgumentException("Perceptron must have at least two dims: input and output");
     }
     this.dims = dims;
     this.activationFunction = activationFunction;
     this.numberOfSteps = numberOfSteps;
+    this.step = step;
+    this.alpha = alpha;
+    this.betta = betta;
+    this.executorService = Executors.newFixedThreadPool(4);
   }
 
   @Override
@@ -48,44 +62,63 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
     return perceptron;
   }
 
-  private Perceptron step(VecDataSet learn, Loss loss, Perceptron perceptron) {
-    for (int t = 0; t < learn.length(); t++) {
-      int index = new Random().nextInt(learn.length());
-
-      Perceptron tmpPerceptron = perceptron.clone();
-      int betta = 20;
-      for (int i = 0; i < tmpPerceptron.depth(); i++) {
-        Mx mx = tmpPerceptron.weights(i);
-        for (int j = 0; j < mx.rows(); j++) {
-          int k = (int) Math.random() * betta;
-          while (k < mx.columns()) {
-            mx.row(j).set(k, 0);
-            k += Math.random() * betta;
-          }
+  private Perceptron step(final VecDataSet learn, final Loss loss, final Perceptron perceptron) {
+    List<Callable<Object>> tasks = new ArrayList<Callable<Object>>(1000);
+    for (int t = 0; t < 1000; t++) {
+      final int index = random.nextInt(learn.length());
+      Callable<Object> callable = new Callable<Object>() {
+        @Override
+        public Object call() throws Exception {
+          innerStep(learn, loss, perceptron, index);
+          return null;
         }
-      }
-
-      final Vec learningVec = learn.at(index);
-      tmpPerceptron.trans(learningVec);
-      final int depth = tmpPerceptron.depth() - 1;
-
-      Vec delta;
-      double lambda = 0.0003;
-
-      delta = loss.gradient(tmpPerceptron.getSum(depth), index);
-      append(perceptron.weights(depth), scale(proj(outer(delta, tmpPerceptron.getOutput(depth - 1)), lambda), 0.001));
-
-      for (int l = depth - 1; l >= 0; l--) {
-        delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
-        scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
-        append(perceptron.weights(l), scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), lambda), 0.001));
-      }
+      };
+      tasks.add(callable);
+    }
+    try {
+      executorService.invokeAll(tasks);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
     return perceptron;
   }
 
+  private void innerStep(VecDataSet learn, Loss loss, Perceptron perceptron, int index) {
+    Perceptron tmpPerceptron = perceptron.clone();
+    for (int i = 0; i < tmpPerceptron.depth(); i++) {
+      Mx mx = tmpPerceptron.weights(i);
+      for (int j = 0; j < mx.rows(); j++) {
+        for (int k = 0; k < mx.columns(); k++) {
+          if (random.nextDouble() > betta)
+            mx.set(j, k, 0);
+        }
+      }
+    }
+
+    final Vec learningVec = learn.at(index);
+    tmpPerceptron.trans(learningVec);
+    final int depth = tmpPerceptron.depth() - 1;
+
+    Vec delta;
+    Mx[] mxes = new Mx[tmpPerceptron.depth()];
+
+    delta = loss.gradient(tmpPerceptron.getSum(depth), index);
+    mxes[depth] = scale(proj(outer(delta, tmpPerceptron.getOutput(depth - 1)), alpha), step);
+
+    for (int l = depth - 1; l >= 0; l--) {
+      delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
+      scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
+      mxes[l] = scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), alpha), step);
+    }
+
+    synchronized (perceptron) {
+      for (int i = 0; i < mxes.length; i++) {
+        append(perceptron.weights(i), mxes[i]);
+      }
+    }
+  }
+
   private void fillWithRandom(Mx mx) {
-    final Random random = new FastRandom();
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++) {
         mx.set(i, j, random.nextGaussian());
@@ -96,7 +129,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
   private Mx proj(Mx mx, double lambda) {
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++) {
-        mx.set(i, j, proj(mx.get(i,j), lambda));
+        mx.set(i, j, proj(mx.get(i, j), lambda));
       }
     }
     return mx;

@@ -52,26 +52,34 @@ public class PerceptronTest {
   @Test
   public void backPropagationTest() throws IOException {
     BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 50, 100, 50, 1},
-            getActivateFunction(), 100);
+            getActivateFunction(), 100, 0.001, 0.0003, 0.8);
     final Action<Perceptron> action = new Action<Perceptron>() {
       private long time = System.currentTimeMillis();
       private Perceptron oldPerceptron;
+      private int n = 0;
 
       @Override
       public void invoke(Perceptron perceptron) {
-        List<Double> distances = new ArrayList<Double>(perceptron.depth());
-        if (oldPerceptron != null) {
-          for (int i = 0; i < perceptron.depth(); i++) {
-            distances.add(distance(oldPerceptron.weights(i), perceptron.weights(i)));
-          }
-        }
-        oldPerceptron = perceptron.clone();
-        long now = System.currentTimeMillis();
         double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
-        double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
 
-        System.out.println(String.format("Log likelihood on learn: %s; on test: %s; distance: %s (time: %s ms)", l, t, distances, now - time));
+        long now;
+        if (n % 10 == 0) {
+          double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
+          List<Double> distances = new ArrayList<Double>(perceptron.depth());
+          if (oldPerceptron != null) {
+            for (int i = 0; i < perceptron.depth(); i++) {
+              distances.add(distance(oldPerceptron.weights(i), perceptron.weights(i)));
+            }
+          }
+          oldPerceptron = perceptron.clone();
+          now = System.currentTimeMillis();
+          System.out.println(String.format("Log likelihood on learn: %s; on test: %s; distance: %s (time: %s ms)", l, t, distances, now - time));
+        } else {
+          now = System.currentTimeMillis();
+          System.out.println(String.format("Log likelihood on learn: %s; (time: %s ms)", l, now - time));
+        }
         time = now;
+        n++;
       }
     };
     backPropagation.addListener(action);
