@@ -1,6 +1,10 @@
 package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -52,7 +56,7 @@ public class PerceptronTest {
   @Test
   public void backPropagationTest() throws IOException {
     BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 50, 100, 50, 1},
-            getActivateFunction(), 100, 0.001, 0.0003, 0.8);
+            getActivateFunction(), 10000, 0.001, 0.0003, 0.2);
     final Action<Perceptron> action = new Action<Perceptron>() {
       private long time = System.currentTimeMillis();
       private Perceptron oldPerceptron;
@@ -60,26 +64,28 @@ public class PerceptronTest {
 
       @Override
       public void invoke(Perceptron perceptron) {
-        double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
-
-        long now;
-        if (n % 10 == 0) {
-          double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
-          List<Double> distances = new ArrayList<Double>(perceptron.depth());
-          if (oldPerceptron != null) {
-            for (int i = 0; i < perceptron.depth(); i++) {
-              distances.add(distance(oldPerceptron.weights(i), perceptron.weights(i)));
+        if (n % 100 == 0) {
+          double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
+          long now;
+          if (n % 1000 == 0) {
+            double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
+            List<Double> distances = new ArrayList<Double>(perceptron.depth());
+            if (oldPerceptron != null) {
+              for (int i = 0; i < perceptron.depth(); i++) {
+                distances.add(distance(oldPerceptron.weights(i), perceptron.weights(i)));
+              }
             }
+            oldPerceptron = perceptron.clone();
+            now = System.currentTimeMillis();
+            System.out.println(String.format("Log likelihood on learn: %s; on test: %s; (time: %s ms)\ndistance: %s", l, t, now - time, distances));
+          } else {
+            now = System.currentTimeMillis();
+            System.out.println(String.format("Log likelihood on learn: %s; (time: %s ms)", l, now - time));
           }
-          oldPerceptron = perceptron.clone();
-          now = System.currentTimeMillis();
-          System.out.println(String.format("Log likelihood on learn: %s; on test: %s; distance: %s (time: %s ms)", l, t, distances, now - time));
-        } else {
-          now = System.currentTimeMillis();
-          System.out.println(String.format("Log likelihood on learn: %s; (time: %s ms)", l, now - time));
+          time = now;
         }
-        time = now;
         n++;
+        System.out.println(n);
       }
     };
     backPropagation.addListener(action);

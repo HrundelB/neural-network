@@ -12,7 +12,9 @@ import com.spbsu.ml.methods.VecOptimization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -28,7 +30,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
   private final double step;
   private final double alpha;
   private final double betta;
-  
+
   private final Random random = new FastRandom();
   private final ExecutorService executorService;
 
@@ -87,12 +89,7 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
     Perceptron tmpPerceptron = perceptron.clone();
     for (int i = 0; i < tmpPerceptron.depth(); i++) {
       Mx mx = tmpPerceptron.weights(i);
-      for (int j = 0; j < mx.rows(); j++) {
-        for (int k = 0; k < mx.columns(); k++) {
-          if (random.nextDouble() > betta)
-            mx.set(j, k, 0);
-        }
-      }
+      setZeroToMx(mx);
     }
 
     final Vec learningVec = learn.at(index);
@@ -115,6 +112,21 @@ public class BackPropagation<Loss extends Logit> extends WeakListenerHolderImpl<
       for (int i = 0; i < mxes.length; i++) {
         append(perceptron.weights(i), mxes[i]);
       }
+    }
+  }
+
+  private void setZeroToMx(Mx mx) {
+    int l = (int) (1 / betta);
+    int n = 0;
+    while (n + 1 < mx.length()) {
+      int index;
+      if (n + l < mx.length()) {
+        index = random.nextInt(l);
+      } else {
+        index = random.nextInt(mx.length() - n);
+      }
+      mx.set(n + index, 0);
+      n += l;
     }
   }
 
