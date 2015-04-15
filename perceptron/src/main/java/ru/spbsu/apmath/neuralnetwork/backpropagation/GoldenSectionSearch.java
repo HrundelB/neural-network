@@ -1,4 +1,4 @@
-package ru.spbsu.apmath.neuralnetwork;
+package ru.spbsu.apmath.neuralnetwork.backpropagation;
 
 /**
  * Created by IntelliJ IDEA.

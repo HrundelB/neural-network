@@ -1,4 +1,4 @@
-package ru.spbsu.apmath.neuralnetwork;
+package ru.spbsu.apmath.neuralnetwork.automaton;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;

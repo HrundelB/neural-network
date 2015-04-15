@@ -1,15 +1,15 @@
 package ru.spbsu.apmath.neuralnetwork;
 
 import com.spbsu.commons.func.Action;
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
+import ru.spbsu.apmath.neuralnetwork.backpropagation.FunctionC1;
+import ru.spbsu.apmath.neuralnetwork.perceptron.Perceptron;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,11 +31,11 @@ public class PerceptronTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(Logit.class);
 
-    Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
+    Pool<?> testPool = DataTools.loadFromFeaturesTxt("src/test/data/featuresTest.txt.gz");
     testDataSet = testPool.vecData();
     testLogit = testPool.target(Logit.class);
 
@@ -50,25 +50,26 @@ public class PerceptronTest {
     Perceptron perceptron = Perceptron.getPerceptronByFiles(getActivateFunction(),
             "perceptron/src/test/data/perceptron/matrix0.txt",
             "perceptron/src/test/data/perceptron/matrix1.txt");
-    System.out.println(String.format("result: %s", testLogit.value(perceptron.transAll(testDataSet.data()).col(0))));
+    System.out.println(String.format("result: %s", testLogit.value(perceptron.transAll(testDataSet).col(0))));
   }
 
   @Test
   public void backPropagationTest() throws IOException {
-    BackPropagation<Logit> backPropagation = new BackPropagation(new int[]{50, 100, 50, 100, 50, 1},
-            getActivateFunction(), 10000, 0.001, 0.0003, 0.2);
-    final Action<Perceptron> action = new Action<Perceptron>() {
+    Perceptron perceptron = new Perceptron(new int[]{50, 100, 50, 100, 50, 1},
+            getActivateFunction());
+    BackPropagation<Logit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.001, 0.0003, 0.2);
+    final Action<Learnable> action = new Action<Learnable>() {
       private long time = System.currentTimeMillis();
-      private Perceptron oldPerceptron;
+      private Learnable oldPerceptron;
       private int n = 0;
 
       @Override
-      public void invoke(Perceptron perceptron) {
+      public void invoke(Learnable perceptron) {
         if (n % 100 == 0) {
-          double l = logit.value(perceptron.transAll(dataSet.data()).col(0));
+          double l = logit.value(perceptron.transAll(dataSet).col(0));
           long now;
           if (n % 1000 == 0) {
-            double t = testLogit.value(perceptron.transAll(testDataSet.data()).col(0));
+            double t = testLogit.value(perceptron.transAll(testDataSet).col(0));
             List<Double> distances = new ArrayList<Double>(perceptron.depth());
             if (oldPerceptron != null) {
               for (int i = 0; i < perceptron.depth(); i++) {
@@ -85,13 +86,13 @@ public class PerceptronTest {
           time = now;
         }
         n++;
-        System.out.println(n);
+        System.out.print(String.format("%s\r", n));
       }
     };
     backPropagation.addListener(action);
     System.out.println("Learning...");
-    Perceptron perceptron = backPropagation.fit(dataSet, logit);
-    perceptron.save("perceptron/src/test/data/perceptron");
+    Learnable<Vec> learnable = backPropagation.fit(dataSet, logit);
+    learnable.save("src/test/data/perceptron");
   }
 
   private FunctionC1 getActivateFunction() {

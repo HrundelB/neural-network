@@ -1,6 +1,8 @@
 package ru.spbsu.apmath.neuralnetwork;
 
 import org.junit.Test;
+import ru.spbsu.apmath.neuralnetwork.backpropagation.Function;
+import ru.spbsu.apmath.neuralnetwork.backpropagation.GoldenSectionSearch;
 
 /**
  * Created by IntelliJ IDEA.

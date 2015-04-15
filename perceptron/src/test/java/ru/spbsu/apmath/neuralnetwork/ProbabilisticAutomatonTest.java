@@ -1,7 +1,7 @@
 package ru.spbsu.apmath.neuralnetwork;
 
-import com.spbsu.commons.math.vectors.Mx;
 import org.junit.Test;
+import ru.spbsu.apmath.neuralnetwork.automaton.ProbabilisticAutomaton;
 
 /**
  * Created by afonin.s on 23.03.2015.
