@@ -31,11 +31,11 @@ public class PerceptronTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(Logit.class);
 
-    Pool<?> testPool = DataTools.loadFromFeaturesTxt("src/test/data/featuresTest.txt.gz");
+    Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
     testDataSet = testPool.vecData();
     testLogit = testPool.target(Logit.class);
 
@@ -92,10 +92,10 @@ public class PerceptronTest {
     backPropagation.addListener(action);
     System.out.println("Learning...");
     Learnable<Vec> learnable = backPropagation.fit(dataSet, logit);
-    learnable.save("src/test/data/perceptron");
+    learnable.save("perceptron/src/test/data/perceptron");
   }
 
-  private FunctionC1 getActivateFunction() {
+  public static FunctionC1 getActivateFunction() {
     return new FunctionC1() {
       @Override
       public double derivative(double x) {
