@@ -9,7 +9,7 @@ import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.methods.Optimization;
 import ru.spbsu.apmath.neuralnetwork.Learnable;
-import ru.spbsu.apmath.neuralnetwork.Logit;
+import ru.spbsu.apmath.neuralnetwork.TargetFuncC1;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
 /**
  * Created by afonin.s on 21.11.2014.
  */
-public class BackPropagation<Loss extends Logit, T extends Seq> extends WeakListenerHolderImpl<Learnable>
+public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends WeakListenerHolderImpl<Learnable>
         implements Optimization<Loss, DataSet<T>, T> {
 
   private final int numberOfSteps;
@@ -77,28 +77,28 @@ public class BackPropagation<Loss extends Logit, T extends Seq> extends WeakList
   }
 
   private void innerStep(DataSet<T> learn, Loss loss, Learnable<T> learnable, int index) {
-    Learnable<T> tmpPerceptron = learnable.clone();
+    Learnable<T> tLearnable = learnable.clone();
 
     final T learningVec = learn.at(index);
-    tmpPerceptron.setLearn(learningVec);
-    for (int i = 0; i < tmpPerceptron.depth(); i++) {
-      Mx mx = tmpPerceptron.weights(i);
+    tLearnable.setLearn(learningVec);
+    for (int i = 0; i < tLearnable.depth(); i++) {
+      Mx mx = tLearnable.weights(i);
       setZeroToMx(mx);
     }
 
-    tmpPerceptron.compute(learningVec);
-    final int depth = tmpPerceptron.depth() - 1;
+    tLearnable.compute(learningVec);
+    final int depth = tLearnable.depth() - 1;
 
     Vec delta;
-    Mx[] mxes = new Mx[tmpPerceptron.depth()];
-
-    delta = loss.gradient(tmpPerceptron.getSum(depth), index);
-    mxes[depth] = scale(proj(outer(delta, tmpPerceptron.getOutput(depth - 1)), alpha), step);
+    Mx[] mxes = new Mx[tLearnable.depth()];
+    delta = loss.gradient(tLearnable.getOutput(depth), index);
+    scale(delta, tLearnable.getActivationFunction().vecDerivative(tLearnable.getSum(depth)));
+    mxes[depth] = scale(proj(outer(delta, tLearnable.getOutput(depth - 1)), alpha), step);
 
     for (int l = depth - 1; l >= 0; l--) {
-      delta = MxTools.multiply(MxTools.transpose(tmpPerceptron.weights(l + 1)), delta);
-      scale(delta, function.vecValue(tmpPerceptron.getSum(l)));
-      mxes[l] = scale(proj(outer(delta, tmpPerceptron.getOutput(l - 1)), alpha), step);
+      delta = MxTools.multiply(MxTools.transpose(tLearnable.weights(l + 1)), delta);
+      scale(delta, function.vecValue(tLearnable.getSum(l)));
+      mxes[l] = scale(proj(outer(delta, tLearnable.getOutput(l - 1)), alpha), step);
     }
 
     synchronized (learnable) {

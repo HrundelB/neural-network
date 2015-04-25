@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.FunctionC1;
+import ru.spbsu.apmath.neuralnetwork.perceptron.LLLogit;
 import ru.spbsu.apmath.neuralnetwork.perceptron.Perceptron;
 
 import java.io.IOException;
@@ -26,18 +27,18 @@ import static com.spbsu.commons.math.vectors.VecTools.distance;
 public class PerceptronTest {
   public static VecDataSet dataSet;
   public static VecDataSet testDataSet;
-  public static Logit logit;
-  public static Logit testLogit;
+  public static LLLogit logit;
+  public static LLLogit testLogit;
 
   @BeforeClass
   public static void init() throws IOException {
     Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
     dataSet = pool.vecData();
-    logit = pool.target(Logit.class);
+    logit = pool.target(LLLogit.class);
 
     Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
     testDataSet = testPool.vecData();
-    testLogit = testPool.target(Logit.class);
+    testLogit = testPool.target(LLLogit.class);
 
     System.out.println(String.format("dataSet: rows - %s, columns - %s", dataSet.data().rows(),
             dataSet.data().columns()));
@@ -57,7 +58,7 @@ public class PerceptronTest {
   public void backPropagationTest() throws IOException {
     Perceptron perceptron = new Perceptron(new int[]{50, 100, 50, 100, 50, 1},
             getActivateFunction());
-    BackPropagation<Logit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.001, 0.0003, 0.2);
+    BackPropagation<LLLogit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.001, 0.0003, 0.2);
     final Action<Learnable> action = new Action<Learnable>() {
       private long time = System.currentTimeMillis();
       private Learnable oldPerceptron;
@@ -66,10 +67,10 @@ public class PerceptronTest {
       @Override
       public void invoke(Learnable perceptron) {
         if (n % 100 == 0) {
-          double l = logit.value(perceptron.transAll(dataSet).col(0));
+          double l = logit.value(perceptron.transAll(dataSet));
           long now;
           if (n % 1000 == 0) {
-            double t = testLogit.value(perceptron.transAll(testDataSet).col(0));
+            double t = testLogit.value(perceptron.transAll(testDataSet));
             List<Double> distances = new ArrayList<Double>(perceptron.depth());
             if (oldPerceptron != null) {
               for (int i = 0; i < perceptron.depth(); i++) {
