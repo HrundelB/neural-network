@@ -1,13 +1,18 @@
 package ru.spbsu.apmath.neuralnetwork;
 
+import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
+import com.spbsu.commons.seq.CharSeq;
+import com.spbsu.commons.seq.CharSeqArray;
+import com.spbsu.commons.seq.CharSeqTools;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,7 +37,7 @@ public class StringTools {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++) {
-        sb.append(mx.get(i,j)).append(' ');
+        sb.append(mx.get(i, j)).append(' ');
       }
       sb.delete(sb.length() - 1, sb.length());
       sb.append(System.lineSeparator());
@@ -57,7 +62,7 @@ public class StringTools {
     while ((line = bufferedReader.readLine()) != null) {
       VecBuilder vecBuilder = new VecBuilder();
       String[] elements = line.split(" ");
-      for (String s: elements)
+      for (String s : elements)
         vecBuilder.append(Double.parseDouble(s));
       rows.add(vecBuilder.build());
     }
@@ -72,5 +77,54 @@ public class StringTools {
     }
     sb.delete(sb.length() - 1, sb.length());
     return sb.toString();
+  }
+
+  public static MyPool<CharSeq> loadTrainTxt(final String file) throws IOException {
+    return loadTrainTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
+  }
+
+  public static MyPool<CharSeq> loadTrainTxt(final Reader in) throws IOException {
+    System.out.println("Start loading...");
+    final List<Double> target = new ArrayList<Double>();
+    final List<CharSeq> data = new ArrayList<CharSeq>();
+    Processor<CharSequence> processor = new Processor<CharSequence>() {
+      private int index = 0;
+
+      @Override
+      public void process(CharSequence arg) {
+        index++;
+        try {
+          final CharSequence[] parts = CharSeqTools.split(arg, '\t');
+          final CharSequence[] numbers = CharSeqTools.split(parts[1], ':');
+          CharSeq charSeq = new CharSeqArray(getArray(parts[0]));
+          Double d = Double.parseDouble(numbers[1].toString());
+          data.add(charSeq);
+          target.add(d);
+        } catch (Exception e) {
+          System.out.println(String.format("Failed to read line %s: %s", index, arg));
+        }
+        if (index % 100 == 0) {
+          System.out.print(String.format("line: %s\r", index));
+        }
+        if (index > 12000) {
+          throw new RuntimeException();
+        }
+      }
+    };
+
+    try {
+      CharSeqTools.processLines(in, processor);
+    } catch (RuntimeException e) {
+    }
+    System.out.println(String.format("Finish loading, total data: %s, target: %s", data.size(), target.size()));
+    return new MyPool<CharSeq>(data, target);
+  }
+
+  public static char[] getArray(CharSequence sequence) {
+    char[] chars = new char[sequence.length()];
+    for (int i = 0; i < chars.length; i++) {
+      chars[i] = sequence.charAt(i);
+    }
+    return chars;
   }
 }

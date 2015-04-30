@@ -32,11 +32,11 @@ public class PerceptronTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(LLLogit.class);
 
-    Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
+    Pool<?> testPool = DataTools.loadFromFeaturesTxt("src/test/data/featuresTest.txt.gz");
     testDataSet = testPool.vecData();
     testLogit = testPool.target(LLLogit.class);
 
@@ -56,9 +56,9 @@ public class PerceptronTest {
 
   @Test
   public void backPropagationTest() throws IOException {
-    Perceptron perceptron = new Perceptron(new int[]{50, 100, 50, 100, 50, 1},
+    Perceptron perceptron = new Perceptron(new int[]{50, 20, 100, 20, 1},
             getActivateFunction());
-    BackPropagation<LLLogit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.001, 0.0003, 0.2);
+    final BackPropagation<LLLogit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.01, 0.0000003, 0.05);
     final Action<Learnable> action = new Action<Learnable>() {
       private long time = System.currentTimeMillis();
       private Learnable oldPerceptron;
@@ -80,6 +80,7 @@ public class PerceptronTest {
             oldPerceptron = perceptron.clone();
             now = System.currentTimeMillis();
             System.out.println(String.format("Log likelihood on learn: %s; on test: %s; (time: %s ms)\ndistance: %s", l, t, now - time, distances));
+            backPropagation.setStep(backPropagation.getStep() / 2);
           } else {
             now = System.currentTimeMillis();
             System.out.println(String.format("Log likelihood on learn: %s; (time: %s ms)", l, now - time));

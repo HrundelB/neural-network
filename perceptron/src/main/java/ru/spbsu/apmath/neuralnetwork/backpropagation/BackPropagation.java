@@ -27,7 +27,7 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
         implements Optimization<Loss, DataSet<T>, T> {
 
   private final int numberOfSteps;
-  private final double step;
+  private double step;
   private final double alpha;
   private final double betta;
   private Learnable<T> learnableObject;
@@ -141,6 +141,14 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
     } else {
       return x + lambda;
     }
+  }
+
+  public double getStep() {
+    return step;
+  }
+
+  public void setStep(double step) {
+    this.step = step;
   }
 
   private Function function = new Function() {
