@@ -27,10 +27,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
   private CharSeq currentSeq;
 
   public ProbabilisticAutomaton(int states, int finalStates, Character[] symbols, FunctionC1 activationFunction) {
-    super(activationFunction);
-    this.weights = new HashMap<Character, Mx>(symbols.length);
-    this.finalStates = finalStates;
-    this.allStates = states + finalStates;
+    this(states + finalStates, finalStates, new HashMap<Character, Mx>(symbols.length), activationFunction);
     for (Character character : symbols) {
       Mx mx = new VecBasedMx(allStates, allStates);
       for (int j = 0; j < mx.columns() - finalStates; j++) {
@@ -41,8 +38,6 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
       }
       weights.put(character, mx);
     }
-    startMatrix = new ColsVecArrayMx(new Vec[]{getVecDistribution(allStates)});
-    startVec = new ArrayVec(new double[]{1});
   }
 
   private ProbabilisticAutomaton(int allStates, int finalStates, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
@@ -50,6 +45,8 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     this.allStates = allStates;
     this.finalStates = finalStates;
     this.weights = weights;
+    this.startMatrix = new ColsVecArrayMx(new Vec[]{getVecDistribution(allStates)});
+    this.startVec = new ArrayVec(new double[]{1});
   }
 
   private Vec getVecDistribution(int length) {
@@ -89,7 +86,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
 
   @Override
   public int depth() {
-    return currentSeq.length();
+    return currentSeq.length() + 1;
   }
 
   @Override

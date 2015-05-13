@@ -37,6 +37,9 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
 
   public BackPropagation(Learnable<T> learnableObject, int numberOfSteps, double step, double alpha,
                          double betta) {
+    if (betta <= 0 || betta > 0.5) {
+      throw new IllegalArgumentException("betta must be greater than 0 and less than 0.5");
+    }
     this.numberOfSteps = numberOfSteps;
     this.step = step;
     this.alpha = alpha;
@@ -48,6 +51,7 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   @Override
   public Learnable<T> fit(DataSet<T> learn, Loss loss) {
     for (int k = 0; k < numberOfSteps; k++) {
+      //System.out.println("fit");
       learnableObject = step(learn, loss, learnableObject);
 
       invoke(learnableObject);
@@ -56,8 +60,9 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   }
 
   private Learnable<T> step(final DataSet<T> learn, final Loss loss, final Learnable<T> learnable) {
-    List<Callable<Object>> tasks = new ArrayList<Callable<Object>>(1000);
-    for (int t = 0; t < 1000; t++) {
+    List<Callable<Object>> tasks = new ArrayList<Callable<Object>>(learn.length());
+    for (int t = 0; t < learn.length(); t++) {
+      //System.out.println("step");
       final int index = random.nextInt(learn.length());
       Callable<Object> callable = new Callable<Object>() {
         @Override
@@ -77,40 +82,54 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   }
 
   private void innerStep(DataSet<T> learn, Loss loss, Learnable<T> learnable, int index) {
-    Learnable<T> tLearnable = learnable.clone();
+    try {
+      //System.out.println("innerstep");
+      Learnable<T> tLearnable = learnable.clone();
 
-    final T learningVec = learn.at(index);
-    tLearnable.setLearn(learningVec);
-    for (int i = 0; i < tLearnable.depth(); i++) {
-      setZeroToMx(tLearnable.weights(i));
-    }
-
-    tLearnable.compute(learningVec);
-    final int depth = tLearnable.depth() - 1;
-
-    Vec delta;
-    Mx[] mxes = new Mx[tLearnable.depth()];
-    delta = loss.gradient(tLearnable.getOutput(depth), index);
-    scale(delta, tLearnable.getActivationFunction().vecDerivative(tLearnable.getSum(depth)));
-    mxes[depth] = scale(proj(outer(delta, tLearnable.getOutput(depth - 1)), alpha), step);
-
-    for (int l = depth - 1; l >= 0; l--) {
-      delta = MxTools.multiply(MxTools.transpose(tLearnable.weights(l + 1)), delta);
-      scale(delta, function.vecValue(tLearnable.getSum(l)));
-      mxes[l] = scale(proj(outer(delta, tLearnable.getOutput(l - 1)), alpha), step);
-    }
-
-    synchronized (learnable) {
-      learnable.setLearn(learningVec);
-      for (int i = 0; i < mxes.length; i++) {
-        append(learnable.weights(i), mxes[i]);
+      final T learningVec = learn.at(index);
+      tLearnable.setLearn(learningVec);
+      for (int i = 0; i < tLearnable.depth(); i++) {
+        Mx mx = tLearnable.weights(i);
+        //System.out.println(mx);
+        setZeroToMx(mx);
       }
+
+      tLearnable.compute(learningVec);
+      final int depth = tLearnable.depth() - 1;
+      //System.out.println("Depth:" + depth);
+
+      Vec delta;
+      Mx[] mxes = new Mx[tLearnable.depth()];
+      delta = loss.gradient(tLearnable.getOutput(depth), index);
+      //System.out.println("delta:" + delta);
+      scale(delta, tLearnable.getActivationFunction().vecDerivative(tLearnable.getSum(depth)));
+      //System.out.println("delta:" + delta);
+      mxes[depth] = scale(proj(outer(delta, tLearnable.getOutput(depth - 1)), alpha), step);
+      //System.out.println("mxes[depth]:" + mxes[depth]);
+
+      for (int l = depth - 1; l >= 0; l--) {
+        delta = MxTools.multiply(MxTools.transpose(tLearnable.weights(l + 1)), delta);
+        scale(delta, function.vecValue(tLearnable.getSum(l)));
+        mxes[l] = scale(proj(outer(delta, tLearnable.getOutput(l - 1)), alpha), step);
+      }
+
+      synchronized (learnable) {
+        learnable.setLearn(learningVec);
+        for (int i = 0; i < mxes.length; i++) {
+          append(learnable.weights(i), mxes[i]);
+        }
+      }
+    } catch (Throwable throwable) {
+      System.out.println("FATAL ERROR: " + throwable.getMessage());
+      throwable.printStackTrace();
+      throw new RuntimeException(throwable);
     }
   }
 
   private void setZeroToMx(Mx mx) {
     int l = (int) (1 / betta);
     int n = 0;
+    //System.out.println(String.format("l = %s, n = %s, length = %s", l, n, mx.length()));
     while (n + 1 < mx.length()) {
       int index;
       if (n + l < mx.length()) {

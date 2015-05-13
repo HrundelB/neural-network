@@ -22,25 +22,18 @@ public class MultiLLLogit extends TargetFuncC1 {
     Vec result = new ArrayVec(dim());
 
     double expMS = 1;
-    for (int j = 0; j < dim() - 1; j++) {
+    for (int j = 0; j < dim(); j++) {
       expMS += Math.exp(x.get(j));
     }
 
     int answer = (int) target.get(indexOfLearningVec);
-    if (answer == dim() - 1) {
-      for (int i = 0; i < dim() - 1; i++) {
+    for (int i = 0; i < dim(); i++) {
+      if (i == answer) {
+        result.set(i, (expMS - Math.exp(x.get(answer))) / expMS);
+      } else {
         result.set(i, -Math.exp(x.get(i)) / expMS);
       }
-    } else {
-      for (int i = 0; i < dim() - 1; i++) {
-        if (i == answer) {
-          result.set(i, (expMS - Math.exp(x.get(answer))) / expMS);
-        } else {
-          result.set(i, Math.exp(x.get(i)) / expMS);
-        }
-      }
     }
-    result.set(dim() - 1, 0);
     return result;
   }
 
@@ -48,13 +41,13 @@ public class MultiLLLogit extends TargetFuncC1 {
   public double value(Vec x, int indexOfLearningVec) {
     int answer = (int) target.get(indexOfLearningVec);
     double result;
-    if (answer == dim() - 1) {
+    if (answer == dim()) {
       result = 1;
     } else {
       result = Math.exp(x.get(answer));
     }
     double expMS = 1;
-    for (int i = 0; i < dim() - 1; i++) {
+    for (int i = 0; i < dim(); i++) {
       expMS += Math.exp(x.get(i));
     }
     result = result / expMS;

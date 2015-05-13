@@ -59,8 +59,8 @@ public class ProbabilisticAutomatonTest {
       }
     };
     Vec target = new ArrayVec(4, 5, 4, 5);
-    final MultiLLLogit multiLLLogit = new MultiLLLogit(6, target, dataSet);
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 1000, 0.01, 0.003, 0.2);
+    final MultiLLLogit multiLLLogit = new MultiLLLogit(5, target, dataSet);
+    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 10, 0.01, 0, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       @Override
       public void invoke(Learnable learnable) {
@@ -88,8 +88,8 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(10, 2, findCharacters(), getActivateFunction());
-    final MultiLLLogit multiLLLogit = new MultiLLLogit(6, pool.getTarget(), pool.getDataSet());
+    ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(3, 2, findCharacters(), getActivateFunction());
+    final MultiLLLogit multiLLLogit = new MultiLLLogit(5, pool.getTarget(), pool.getDataSet());
     BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 1000, 0.01, 0.003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
