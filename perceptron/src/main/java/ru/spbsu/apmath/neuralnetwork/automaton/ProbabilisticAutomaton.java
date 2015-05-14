@@ -18,8 +18,8 @@ import java.util.HashMap;
  * Created by afonin.s on 23.03.2015.
  */
 public class ProbabilisticAutomaton extends Learnable<CharSeq> {
-  private final int finalStates;
-  private final int allStates;
+  private final int finalStates;   // real final states count
+  private final int allStates;     // states + finalStates - 1
   private HashMap<Character, Mx> weights;
   private Mx startMatrix;
   private Vec startVec;
@@ -27,7 +27,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
   private CharSeq currentSeq;
 
   public ProbabilisticAutomaton(int states, int finalStates, Character[] symbols, FunctionC1 activationFunction) {
-    this(states + finalStates, finalStates, new HashMap<Character, Mx>(symbols.length), activationFunction);
+    this(states + finalStates - 1, finalStates, new HashMap<Character, Mx>(symbols.length), activationFunction);
     for (Character character : symbols) {
       Mx mx = new VecBasedMx(allStates, allStates);
       for (int j = 0; j < mx.columns() - finalStates; j++) {
@@ -101,7 +101,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     }
     Character c = currentSeq.at(i - 1);
     Mx mx = weights.get(c);
-    for (int j = mx.columns() - finalStates; j < mx.columns(); j++) {
+    for (int j = mx.columns() - finalStates + 1; j < mx.columns(); j++) {
       for (int k = 0; k < mx.rows(); k++) {
         mx.set(k, j, 0);
       }

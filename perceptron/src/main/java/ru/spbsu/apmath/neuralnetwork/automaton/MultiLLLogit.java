@@ -14,7 +14,7 @@ public class MultiLLLogit extends TargetFuncC1 {
 
   public MultiLLLogit(int dim, Vec target, DataSet<?> owner) {
     super(target, owner);
-    this.dim = dim;
+    this.dim = dim - 1;
   }
 
   @Override

@@ -15,6 +15,7 @@ import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import static ru.spbsu.apmath.neuralnetwork.PerceptronTest.getActivateFunction;
@@ -29,7 +30,7 @@ public class ProbabilisticAutomatonTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    pool = loadTrainTxt("src/test/data/train.txt.gz");
+    pool = loadTrainTxt("perceptron/src/test/data/train.txt.gz");
   }
 
   @Test
@@ -58,9 +59,9 @@ public class ProbabilisticAutomatonTest {
         return CharSeq.class;
       }
     };
-    Vec target = new ArrayVec(4, 5, 4, 5);
+    Vec target = new ArrayVec(3, 4, 3, 4);
     final MultiLLLogit multiLLLogit = new MultiLLLogit(5, target, dataSet);
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 10, 0.01, 0, 0.2);
+    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 100000, 0.001, 0.00003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       @Override
       public void invoke(Learnable learnable) {
@@ -88,9 +89,13 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(3, 2, findCharacters(), getActivateFunction());
-    final MultiLLLogit multiLLLogit = new MultiLLLogit(5, pool.getTarget(), pool.getDataSet());
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 1000, 0.01, 0.003, 0.2);
+    int states = 15;
+    ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(states, 2, findCharacters(), getActivateFunction());
+    for (int i = 0; i < pool.getTarget().length(); i++) {
+      pool.getTarget().adjust(i, states);
+    }
+    final MultiLLLogit multiLLLogit = new MultiLLLogit(states + 2, pool.getTarget(), pool.getDataSet());
+    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 3000, 0.1, 0.00003, 0.01);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
@@ -99,6 +104,9 @@ public class ProbabilisticAutomatonTest {
         if (n % 100 == 0) {
           double l = multiLLLogit.value(learnable.transAll(pool.getDataSet()));
           System.out.println(String.format("Log likelihood on learn: %s", l));
+          int index = new Random().nextInt(pool.getDataSet().length());
+          System.out.println(String.format("index: %s, target: %s, compute: %s", index,
+                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
         }
         n++;
         System.out.print(String.format("%s\r", n));

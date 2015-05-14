@@ -32,11 +32,11 @@ public class PerceptronTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pool<?> pool = DataTools.loadFromFeaturesTxt("src/test/data/features.txt.gz");
+    Pool<?> pool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/features.txt.gz");
     dataSet = pool.vecData();
     logit = pool.target(LLLogit.class);
 
-    Pool<?> testPool = DataTools.loadFromFeaturesTxt("src/test/data/featuresTest.txt.gz");
+    Pool<?> testPool = DataTools.loadFromFeaturesTxt("perceptron/src/test/data/featuresTest.txt.gz");
     testDataSet = testPool.vecData();
     testLogit = testPool.target(LLLogit.class);
 

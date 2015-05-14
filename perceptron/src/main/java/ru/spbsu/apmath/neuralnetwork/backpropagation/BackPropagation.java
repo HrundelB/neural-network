@@ -51,7 +51,6 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   @Override
   public Learnable<T> fit(DataSet<T> learn, Loss loss) {
     for (int k = 0; k < numberOfSteps; k++) {
-      //System.out.println("fit");
       learnableObject = step(learn, loss, learnableObject);
 
       invoke(learnableObject);
@@ -60,9 +59,9 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   }
 
   private Learnable<T> step(final DataSet<T> learn, final Loss loss, final Learnable<T> learnable) {
-    List<Callable<Object>> tasks = new ArrayList<Callable<Object>>(learn.length());
-    for (int t = 0; t < learn.length(); t++) {
-      //System.out.println("step");
+    int n = (learn.length() > 1000 ? 1000 : learn.length());
+    List<Callable<Object>> tasks = new ArrayList<Callable<Object>>(n);
+    for (int t = 0; t < n; t++) {
       final int index = random.nextInt(learn.length());
       Callable<Object> callable = new Callable<Object>() {
         @Override
@@ -83,29 +82,23 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
 
   private void innerStep(DataSet<T> learn, Loss loss, Learnable<T> learnable, int index) {
     try {
-      //System.out.println("innerstep");
       Learnable<T> tLearnable = learnable.clone();
 
       final T learningVec = learn.at(index);
       tLearnable.setLearn(learningVec);
       for (int i = 0; i < tLearnable.depth(); i++) {
         Mx mx = tLearnable.weights(i);
-        //System.out.println(mx);
         setZeroToMx(mx);
       }
 
       tLearnable.compute(learningVec);
       final int depth = tLearnable.depth() - 1;
-      //System.out.println("Depth:" + depth);
 
       Vec delta;
       Mx[] mxes = new Mx[tLearnable.depth()];
       delta = loss.gradient(tLearnable.getOutput(depth), index);
-      //System.out.println("delta:" + delta);
       scale(delta, tLearnable.getActivationFunction().vecDerivative(tLearnable.getSum(depth)));
-      //System.out.println("delta:" + delta);
       mxes[depth] = scale(proj(outer(delta, tLearnable.getOutput(depth - 1)), alpha), step);
-      //System.out.println("mxes[depth]:" + mxes[depth]);
 
       for (int l = depth - 1; l >= 0; l--) {
         delta = MxTools.multiply(MxTools.transpose(tLearnable.weights(l + 1)), delta);
@@ -129,7 +122,6 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
   private void setZeroToMx(Mx mx) {
     int l = (int) (1 / betta);
     int n = 0;
-    //System.out.println(String.format("l = %s, n = %s, length = %s", l, n, mx.length()));
     while (n + 1 < mx.length()) {
       int index;
       if (n + l < mx.length()) {
