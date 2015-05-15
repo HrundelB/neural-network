@@ -89,13 +89,13 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    int states = 15;
+    int states = 10;
     ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(states, 2, findCharacters(), getActivateFunction());
     for (int i = 0; i < pool.getTarget().length(); i++) {
       pool.getTarget().adjust(i, states);
     }
     final MultiLLLogit multiLLLogit = new MultiLLLogit(states + 2, pool.getTarget(), pool.getDataSet());
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 3000, 0.1, 0.00003, 0.01);
+    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 3000, 0.001, 0.00003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
