@@ -8,6 +8,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.CharSeqTools;
+import com.spbsu.commons.util.Pair;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -79,11 +80,11 @@ public class StringTools {
     return sb.toString();
   }
 
-  public static MyPool<CharSeq> loadTrainTxt(final String file) throws IOException {
+  public static Pair<List<CharSeq>, List<Double>> loadTrainTxt(final String file) throws IOException {
     return loadTrainTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
 
-  public static MyPool<CharSeq> loadTrainTxt(final Reader in) throws IOException {
+  public static Pair<List<CharSeq>, List<Double>> loadTrainTxt(final Reader in) throws IOException {
     System.out.println("Start loading...");
     final List<Double> target = new ArrayList<Double>();
     final List<CharSeq> data = new ArrayList<CharSeq>();
@@ -103,11 +104,8 @@ public class StringTools {
         } catch (Exception e) {
           System.out.println(String.format("Failed to read line %s: %s", index, arg));
         }
-        if (index % 100 == 0) {
+        if (index % 1000 == 0) {
           System.out.print(String.format("line: %s\r", index));
-        }
-        if (index > 12000) {
-          throw new RuntimeException();
         }
       }
     };
@@ -117,7 +115,7 @@ public class StringTools {
     } catch (RuntimeException e) {
     }
     System.out.println(String.format("Finish loading, total data: %s, target: %s", data.size(), target.size()));
-    return new MyPool<CharSeq>(data, target);
+    return new Pair<List<CharSeq>, List<Double>>(data, target);
   }
 
   public static char[] getArray(CharSequence sequence) {

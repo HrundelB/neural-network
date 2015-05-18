@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.DataSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -14,9 +15,7 @@ import ru.spbsu.apmath.neuralnetwork.automaton.ProbabilisticAutomaton;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static ru.spbsu.apmath.neuralnetwork.PerceptronTest.getActivateFunction;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.loadTrainTxt;
@@ -30,7 +29,31 @@ public class ProbabilisticAutomatonTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    pool = loadTrainTxt("perceptron/src/test/data/train.txt.gz");
+    Pair<List<CharSeq>, List<Double>> pair = loadTrainTxt("perceptron/src/test/data/train.txt.gz");
+    List<CharSeq> data = new ArrayList<CharSeq>();
+    List<Double> target = new ArrayList<Double>();
+    int n0 = 0, n1 = 0;
+    for (int i = 0; i < pair.getSecond().size(); i += 50) {
+      double answer = pair.getSecond().get(i);
+      if (answer == 0 && n1 >= n0) {
+        data.add(pair.getFirst().get(i));
+        target.add(answer);
+        n0++;
+      } else if (answer > 0 && n0 >= n1) {
+        data.add(pair.getFirst().get(i));
+        target.add(answer);
+        n1++;
+      }
+    }
+    pool = new MyPool<CharSeq>(data, target);
+    int n = 0;
+    int length = pool.getTarget().length();
+    for (int i = 0; i < length; i++) {
+      if (pool.getTarget().get(i) > 0) {
+        n++;
+      }
+    }
+    System.out.println(String.format("All: %s, zero: %s, other: %s", length, length - n, n));
   }
 
   @Test
@@ -59,7 +82,7 @@ public class ProbabilisticAutomatonTest {
         return CharSeq.class;
       }
     };
-    Vec target = new ArrayVec(3, 4, 3, 4);
+    Vec target = new ArrayVec(3, 3, 4, 4);
     final MultiLLLogit multiLLLogit = new MultiLLLogit(5, target, dataSet);
     BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 100000, 0.001, 0.00003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
@@ -89,13 +112,13 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    int states = 10;
+    int states = 20;
     ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(states, 2, findCharacters(), getActivateFunction());
     for (int i = 0; i < pool.getTarget().length(); i++) {
       pool.getTarget().adjust(i, states);
     }
     final MultiLLLogit multiLLLogit = new MultiLLLogit(states + 2, pool.getTarget(), pool.getDataSet());
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 3000, 0.001, 0.00003, 0.2);
+    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<MultiLLLogit, CharSeq>(probabilisticAutomaton, 3000, 0.01, 0.0003, 0.1);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
@@ -105,8 +128,19 @@ public class ProbabilisticAutomatonTest {
           double l = multiLLLogit.value(learnable.transAll(pool.getDataSet()));
           System.out.println(String.format("Log likelihood on learn: %s", l));
           int index = new Random().nextInt(pool.getDataSet().length());
+          Vec vec = (Vec)learnable.compute(pool.getDataSet().at(index));
+          Vec compute = new ArrayVec(vec.length() + 1);
+          double sum = 1;
+          for (int j = 0; j < vec.length(); j++) {
+            sum += vec.get(j);
+          }
+          for (int i = 0; i < vec.length(); i++) {
+            compute.set(i, vec.get(i) / sum);
+          }
+          compute.set(vec.length(), 1 / sum);
           System.out.println(String.format("index: %s, target: %s, compute: %s", index,
-                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
+                  pool.getTarget().get(index), compute));
+          System.out.println(pool.getDataSet().at(index));
         }
         n++;
         System.out.print(String.format("%s\r", n));
