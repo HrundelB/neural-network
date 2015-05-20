@@ -32,7 +32,7 @@ public class ProbabilisticAutomatonTest {
 
   @BeforeClass
   public static void init() throws IOException {
-    Pair<List<CharSeq>, List<Double>> pair = loadTrainTxt("src/test/data/train.txt.gz");
+    Pair<List<CharSeq>, List<Double>> pair = loadTrainTxt("perceptron/src/test/data/train.txt.gz");
     List<CharSeq> data = new ArrayList<CharSeq>();
     List<Double> target = new ArrayList<Double>();
     int n0 = 0, n1 = 0;
@@ -99,7 +99,7 @@ public class ProbabilisticAutomatonTest {
     backPropagation.fit(dataSet, multiLLLogit);
     System.out.println("============");
     System.out.println(probabilisticAutomaton.transAll(dataSet));
-    probabilisticAutomaton.save("src/test/data/automaton");
+    probabilisticAutomaton.save("perceptron/src/test/data/automaton");
   }
 
   public Character[] findCharacters() throws IOException {
@@ -145,7 +145,7 @@ public class ProbabilisticAutomatonTest {
     };
     backPropagation.addListener(action);
     backPropagation.fit(pool.getDataSet(), multiLLLogit);
-    probabilisticAutomaton.save("src/test/data/automaton");
+    probabilisticAutomaton.save("perceptron/src/test/data/automaton");
   }
 
   private double getPerplexity(Learnable learnable, MultiLLLogit multiLLLogit) {
@@ -175,8 +175,8 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void writeSamples() throws FileNotFoundException {
-    File samples = new File("src/test/data/sample.txt");
-    File stest = new File("src/test/data/stest.txt");
+    File samples = new File("perceptron/src/test/data/sample.txt");
+    File stest = new File("perceptron/src/test/data/stest.txt");
     PrintWriter samplesPrintWriter = new PrintWriter(samples);
     PrintWriter stestPrintWriter = new PrintWriter(stest);
     for (int i = 0; i < pool.getDataSet().length(); i++) {
@@ -189,7 +189,7 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void getAutomatonTest() throws IOException {
-    final ProbabilisticAutomaton probabilisticAutomaton = ProbabilisticAutomaton.getAutomatonByFiles("src/test/data/automaton", getActivateFunction());
+    final ProbabilisticAutomaton probabilisticAutomaton = ProbabilisticAutomaton.getAutomatonByFiles("perceptron/src/test/data/automaton", getActivateFunction());
     final MultiLLLogit multiLLLogit = new MultiLLLogit(12, pool.getTarget(), pool.getDataSet());
     double perplexity = getPerplexity(probabilisticAutomaton, multiLLLogit);
     System.out.println("Perplexity: " + perplexity);
