@@ -56,4 +56,15 @@ public abstract class Learnable<L extends Seq> implements Cloneable, Computable<
     }
     return result;
   }
+
+  public double getPerplexity(DataSet<L> dataSet, TargetFuncC1 targetFuncC1) {
+    double entropy = 0;
+    int len = dataSet.length();
+    double d = 1 / (double) len;
+    for (int i = 0; i < len; i++) {
+      double value = targetFuncC1.value(compute(dataSet.at(i)), i);
+      entropy += d * value;
+    }
+    return Math.exp(-entropy);
+  }
 }

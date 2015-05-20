@@ -159,4 +159,18 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     }
     return new ProbabilisticAutomaton((int) mx.get(0, 0), (int) mx.get(0, 1), startMX, hashMap, activationFunction);
   }
+
+  public Vec getComputedVec(CharSeq argument) {
+    Vec vec = compute(argument);
+    Vec compute = new ArrayVec(vec.length() + 1);
+    double sum = 1;
+    for (int j = 0; j < vec.length(); j++) {
+      sum += vec.get(j);
+    }
+    for (int i = 0; i < vec.length(); i++) {
+      compute.set(i, vec.get(i) / sum);
+    }
+    compute.set(vec.length(), 1 / sum);
+    return compute;
+  }
 }

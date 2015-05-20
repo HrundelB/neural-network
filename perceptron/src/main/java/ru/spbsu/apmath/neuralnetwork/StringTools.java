@@ -9,10 +9,13 @@ import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.data.set.DataSet;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -124,5 +127,17 @@ public class StringTools {
       chars[i] = sequence.charAt(i);
     }
     return chars;
+  }
+
+  public static Character[] findCharacters(DataSet<CharSeq> dataSet) throws IOException {
+    Set<Character> set = new HashSet<Character>();
+    for (int i = 0; i < dataSet.length(); i++) {
+      CharSeq charSeq = dataSet.at(i);
+      for (int j = 0; j < charSeq.length(); j++) {
+        set.add(charSeq.at(j));
+      }
+    }
+    System.out.println(set);
+    return set.toArray(new Character[]{});
   }
 }
