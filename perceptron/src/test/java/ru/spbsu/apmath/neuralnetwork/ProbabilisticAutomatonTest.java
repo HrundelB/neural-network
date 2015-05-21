@@ -11,6 +11,7 @@ import org.junit.Test;
 import ru.spbsu.apmath.neuralnetwork.automaton.MultiLLLogit;
 import ru.spbsu.apmath.neuralnetwork.automaton.ProbabilisticAutomaton;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
+import ru.spbsu.apmath.neuralnetwork.backpropagation.FunctionC1;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,9 +22,9 @@ import java.util.List;
 import java.util.Random;
 
 import static ru.spbsu.apmath.neuralnetwork.MyPool.getBalancedPool;
-import static ru.spbsu.apmath.neuralnetwork.PerceptronTest.getActivateFunction;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.findCharacters;
 import static ru.spbsu.apmath.neuralnetwork.StringTools.loadTrainTxt;
+import static ru.spbsu.apmath.neuralnetwork.StringTools.printVec;
 
 /**
  * Created by afonin.s on 23.03.2015.
@@ -69,12 +70,14 @@ public class ProbabilisticAutomatonTest {
       pool.getTarget().adjust(i, states);
     }
     final MultiLLLogit multiLLLogit = new MultiLLLogit(states + 2, pool.getTarget(), pool.getDataSet());
-    BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 3000, 0.01, 0.003, 0.05);
+    final BackPropagation<MultiLLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 3000, 0.01, 0.0003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
       @Override
       public void invoke(Learnable learnable) {
+        n++;
+        System.out.print(String.format("%s\r", n));
         if (n % 100 == 0) {
           double l = multiLLLogit.value(learnable.transAll(pool.getDataSet()));
           System.out.println(String.format("Log likelihood on learn: %s", l));
@@ -82,12 +85,10 @@ public class ProbabilisticAutomatonTest {
           Vec compute = ((ProbabilisticAutomaton) learnable).getComputedVec(pool.getDataSet().at(index));
           System.out.println(String.format("index: %s, target: %s, compute: %s", index,
                   pool.getTarget().get(index), compute));
-          System.out.println(pool.getDataSet().at(index));
+          System.out.println(String.format("%s -> %s", pool.getDataSet().at(index), printVec(((ProbabilisticAutomaton) learnable).compute(pool.getDataSet().at(index)))));
           double perplexity = learnable.getPerplexity(pool.getDataSet(), multiLLLogit);
           System.out.println("Perplexity: " + perplexity);
         }
-        n++;
-        System.out.print(String.format("%s\r", n));
       }
     };
     backPropagation.addListener(action);
@@ -116,5 +117,19 @@ public class ProbabilisticAutomatonTest {
     final MultiLLLogit multiLLLogit = new MultiLLLogit(12, pool.getTarget(), pool.getDataSet());
     double perplexity = probabilisticAutomaton.getPerplexity(pool.getDataSet(), multiLLLogit);
     System.out.println("Perplexity: " + perplexity);
+  }
+
+  public static FunctionC1 getActivateFunction() {
+    return new FunctionC1() {
+      @Override
+      public double derivative(double x) {
+        return 1.;
+      }
+
+      @Override
+      public double call(double x) {
+        return 1. / (1. + Math.exp(-x));
+      }
+    };
   }
 }

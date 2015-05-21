@@ -80,10 +80,12 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     sums[0] = MxTools.multiply(startMatrix, startVec);
     outputs[1] = activationFunction.vecValue(sums[0]);
 
-    for (int i = 0; i < argument.length(); i++) {
+    for (int i = 0; i < argument.length() - 1; i++) {
       sums[i + 1] = MxTools.multiply(weights.get(argument.charAt(i)), outputs[i + 1]);
       outputs[i + 2] = activationFunction.vecValue(sums[i + 1]);
     }
+    sums[argument.length()] = MxTools.multiply(weights.get(argument.charAt(argument.length() - 1)), outputs[argument.length()]);
+    outputs[argument.length() + 1] = sums[argument.length()];
     return outputs[outputs.length - 1];
   }
 
@@ -109,9 +111,9 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     }
     Character c = currentSeq.at(i - 1);
     Mx mx = weights.get(c);
-    for (int j = mx.columns() - finalStates + 1; j < mx.columns(); j++) {
-      for (int k = 0; k < mx.rows(); k++) {
-        mx.set(k, j, 0);
+    for (int j = mx.rows() - finalStates + 1; j < mx.rows(); j++) {
+      for (int k = 0; k < mx.columns(); k++) {
+        mx.set(j, k, 0);
       }
     }
     return mx;
@@ -163,14 +165,14 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
   public Vec getComputedVec(CharSeq argument) {
     Vec vec = compute(argument);
     Vec compute = new ArrayVec(vec.length() + 1);
-    double sum = 1;
+    double expMS = 1;
     for (int j = 0; j < vec.length(); j++) {
-      sum += vec.get(j);
+      expMS += Math.exp(vec.get(j));
     }
     for (int i = 0; i < vec.length(); i++) {
-      compute.set(i, vec.get(i) / sum);
+      compute.set(i, Math.exp(vec.get(i)) / expMS);
     }
-    compute.set(vec.length(), 1 / sum);
+    compute.set(vec.length(), 1 / expMS);
     return compute;
   }
 }

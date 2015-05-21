@@ -21,17 +21,17 @@ public class MultiLLLogit extends TargetFuncC1 {
   public Vec gradient(Vec x, int indexOfLearningVec) {
     Vec result = new ArrayVec(dim());
 
-    double sum = 1;
+    double expMS = 1;
     for (int j = 0; j < dim(); j++) {
-      sum += x.get(j);
+      expMS += Math.exp(x.get(j));
     }
 
     int answer = (int) target.get(indexOfLearningVec);
     for (int i = 0; i < dim(); i++) {
       if (i == answer) {
-        result.set(i, (sum - x.get(answer)) / (sum * x.get(answer)));
+        result.set(i, (expMS - Math.exp(x.get(answer))) / expMS);
       } else {
-        result.set(i, -1 / sum);
+        result.set(i, -Math.exp(x.get(i)) / expMS);
       }
     }
     return result;
@@ -44,13 +44,13 @@ public class MultiLLLogit extends TargetFuncC1 {
     if (answer == dim()) {
       result = 1;
     } else {
-      result = x.get(answer);
+      result = Math.exp(x.get(answer));
     }
-    double sum = 1;
+    double expMS = 1;
     for (int i = 0; i < dim(); i++) {
-      sum += x.get(i);
+      expMS += Math.exp(x.get(i));
     }
-    result = result / sum;
+    result = result / expMS;
     return Math.log(result);
   }
 
