@@ -1,5 +1,6 @@
 package ru.spbsu.apmath.neuralnetwork;
 
+import com.spbsu.commons.func.converters.Double2BufferConverter;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.CharSeq;
@@ -67,8 +68,8 @@ public class MyPool<T extends Seq> {
   }
 
   public static MyPool<CharSeq> getBalancedPool(Pair<List<CharSeq>, List<Double>> pair) {
-    List<CharSeq> data = new ArrayList<>();
-    List<Double> target = new ArrayList<>();
+    List<CharSeq> data = new ArrayList<CharSeq>();
+    List<Double> target = new ArrayList<Double>();
     int n0 = 0, n1 = 0;
     for (int i = 0; i < pair.getSecond().size(); i += 50) {
       double answer = pair.getSecond().get(i);
@@ -83,6 +84,6 @@ public class MyPool<T extends Seq> {
       }
     }
     System.out.println(String.format("All: %s, zero: %s, other: %s", target.size(), n0, n1));
-    return new MyPool<>(data, target);
+    return new MyPool<CharSeq>(data, target);
   }
 }
