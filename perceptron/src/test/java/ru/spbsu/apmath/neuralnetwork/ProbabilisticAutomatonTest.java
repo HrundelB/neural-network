@@ -47,7 +47,7 @@ public class ProbabilisticAutomatonTest {
   public void manualTest() throws IOException {
     ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(3, new Character[]{'a', 'b'}, getActivateFunction());
     final LLLogit logit = new LLLogit(manualPool.getTarget(), manualPool.getDataSet());
-    BackPropagation<LLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 100000, 0.01, 0.003, 0.1);
+    BackPropagation<LLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 100000, 0.001, 0.00003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       @Override
       public void invoke(Learnable learnable) {
@@ -66,12 +66,8 @@ public class ProbabilisticAutomatonTest {
   public void test() throws IOException {
     int states = 10;
     ProbabilisticAutomaton probabilisticAutomaton = new ProbabilisticAutomaton(states, findCharacters(pool.getDataSet()), getActivateFunction());
-//    for (int i = 0; i < pool.size(); i++) {
-//      pool.getTarget().adjust(i, states);
-//    }
-//    final MultiLLLogit multiLLLogit = new MultiLLLogit(states + 2, pool.getTarget(), pool.getDataSet());
     final LLLogit logit = new LLLogit(pool.getTarget(), pool.getDataSet());
-    final BackPropagation<LLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 3000, 0.0001, 0.0003, 0.1);
+    final BackPropagation<LLLogit, CharSeq> backPropagation = new BackPropagation<>(probabilisticAutomaton, 3000, 0.01, 0.0003, 0.1);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 

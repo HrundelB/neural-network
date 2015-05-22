@@ -13,7 +13,7 @@ public class CRFTest {
 
   @Test
   public void crfTest() throws Exception {
-    //SimpleTagger.main(new String[]{"--train", "true", "--model-file", "nouncrf",  "src/test/data/sample.txt"});
-    SimpleTagger.main(new String[]{ "--model-file", "src/test/data/nouncrf",  "src/test/data/stest.txt"});
+    //SimpleTagger.main(new String[]{"--train", "true", "--model-file", "nouncrf",  "perceptron/src/test/data/sample.txt"});
+    SimpleTagger.main(new String[]{ "--model-file", "perceptron/src/test/data/nouncrf",  "perceptron/src/test/data/stest.txt"});
   }
 }

@@ -3,8 +3,6 @@ package ru.spbsu.apmath.neuralnetwork.automaton;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
-import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
@@ -32,7 +30,8 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
   private CharSeq currentSeq;
 
   public ProbabilisticAutomaton(int states, Character[] symbols, FunctionC1 activationFunction) {
-    this(states, new HashMap<Character, Mx>(symbols.length), activationFunction);
+    this(states, new VecBasedMx(states, 1), new VecBasedMx(1, states),
+            new HashMap<Character, Mx>(symbols.length), activationFunction);
     for (Character character : symbols) {
       Mx mx = new VecBasedMx(states, states);
       for (int j = 0; j < mx.columns(); j++) {
@@ -43,11 +42,14 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
       }
       weights.put(character, mx);
     }
-  }
-
-  private ProbabilisticAutomaton(int states, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
-    this(states, new ColsVecArrayMx(new Vec[]{getVecDistribution(states)}),
-            new RowsVecArrayMx(new Vec[]{getVecDistribution(states)}), weights, activationFunction);
+    Vec vec = getVecDistribution(states);
+    for (int i = 0; i < states; i++) {
+      startMatrix.set(i, 0, vec.get(i));
+    }
+    vec = getVecDistribution(states);
+    for (int i = 0; i < states; i++) {
+      finalMatrix.set(0, i, vec.get(i));
+    }
   }
 
   private ProbabilisticAutomaton(int states, Mx startMatrix, Mx finalMatrix, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
@@ -75,9 +77,8 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
 
   @Override
   public Vec compute(CharSeq argument) {
-    setLearn(argument);
-    outputs = new Vec[depth() + 1];
-    sums = new Vec[depth()];
+    outputs = new Vec[argument.length() + 3];
+    sums = new Vec[argument.length() + 2];
 
     outputs[0] = startVec;
     sums[0] = MxTools.multiply(startMatrix, startVec);
@@ -88,9 +89,9 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
       outputs[i + 2] = activationFunction.vecValue(sums[i + 1]);
     }
 
-    sums[depth() - 1] = MxTools.multiply(finalMatrix, outputs[depth() - 1]);
-    outputs[depth()] = activationFunction.vecValue(sums[depth() - 1]);
-    return outputs[depth()];
+    sums[argument.length() + 1] = MxTools.multiply(finalMatrix, outputs[argument.length() + 1]);
+    outputs[argument.length() + 2] = activationFunction.vecValue(sums[argument.length() + 1]);
+    return outputs[outputs.length - 1];
   }
 
   @Override
@@ -127,7 +128,9 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     for (Character c : weights.keySet()) {
       hashMap.put(c, new VecBasedMx(weights.get(c)));
     }
-    return new ProbabilisticAutomaton(states, hashMap, activationFunction);
+    Mx startMx = new VecBasedMx(startMatrix);
+    Mx finalMx = new VecBasedMx(finalMatrix);
+    return new ProbabilisticAutomaton(states, startMx, finalMx, hashMap, activationFunction);
   }
 
   @Override
