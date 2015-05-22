@@ -26,6 +26,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
 public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends WeakListenerHolderImpl<Learnable>
         implements Optimization<Loss, DataSet<T>, T> {
 
+  public static final int THREADS = 4;
   private final int numberOfSteps;
   private double step;
   private final double alpha;
@@ -44,7 +45,7 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
     this.step = step;
     this.alpha = alpha;
     this.betta = betta;
-    this.executorService = Executors.newFixedThreadPool(4);
+    this.executorService = Executors.newFixedThreadPool(THREADS);
     this.learnableObject = learnableObject;
   }
 

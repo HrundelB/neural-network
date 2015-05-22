@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
+import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
@@ -22,20 +23,20 @@ import java.util.regex.Pattern;
  * Created by afonin.s on 23.03.2015.
  */
 public class ProbabilisticAutomaton extends Learnable<CharSeq> {
-  private final int finalStates;   // real final states count
-  private final int allStates;     // states + finalStates - 1
+  private final int states;
   private HashMap<Character, Mx> weights;
   private Mx startMatrix;
+  private Mx finalMatrix;
   private Vec startVec;
   private static final FastRandom RANDOM = new FastRandom();
   private CharSeq currentSeq;
 
-  public ProbabilisticAutomaton(int states, int finalStates, Character[] symbols, FunctionC1 activationFunction) {
-    this(states + finalStates - 1, finalStates, new HashMap<Character, Mx>(symbols.length), activationFunction);
+  public ProbabilisticAutomaton(int states, Character[] symbols, FunctionC1 activationFunction) {
+    this(states, new HashMap<Character, Mx>(symbols.length), activationFunction);
     for (Character character : symbols) {
-      Mx mx = new VecBasedMx(allStates, allStates);
-      for (int j = 0; j < mx.columns() - finalStates; j++) {
-        Vec vec = getVecDistribution(mx.rows());
+      Mx mx = new VecBasedMx(states, states);
+      for (int j = 0; j < mx.columns(); j++) {
+        Vec vec = getVecDistribution(states);
         for (int i = 0; i < mx.rows(); i++) {
           mx.set(i, j, vec.get(i));
         }
@@ -44,16 +45,17 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     }
   }
 
-  private ProbabilisticAutomaton(int allStates, int finalStates, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
-    this(allStates, finalStates, new ColsVecArrayMx(new Vec[]{getVecDistribution(allStates)}), weights, activationFunction);
+  private ProbabilisticAutomaton(int states, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
+    this(states, new ColsVecArrayMx(new Vec[]{getVecDistribution(states)}),
+            new RowsVecArrayMx(new Vec[]{getVecDistribution(states)}), weights, activationFunction);
   }
 
-  private ProbabilisticAutomaton(int allStates, int finalStates, Mx startMatrix, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
+  private ProbabilisticAutomaton(int states, Mx startMatrix, Mx finalMatrix, HashMap<Character, Mx> weights, FunctionC1 activationFunction) {
     super(activationFunction);
-    this.allStates = allStates;
-    this.finalStates = finalStates;
+    this.states = states;
     this.weights = weights;
     this.startMatrix = startMatrix;
+    this.finalMatrix = finalMatrix;
     this.startVec = new ArrayVec(new double[]{1});
   }
 
@@ -73,20 +75,22 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
 
   @Override
   public Vec compute(CharSeq argument) {
-    outputs = new Vec[argument.length() + 2];
-    sums = new Vec[argument.length() + 1];
+    setLearn(argument);
+    outputs = new Vec[depth() + 1];
+    sums = new Vec[depth()];
 
     outputs[0] = startVec;
     sums[0] = MxTools.multiply(startMatrix, startVec);
     outputs[1] = activationFunction.vecValue(sums[0]);
 
-    for (int i = 0; i < argument.length() - 1; i++) {
+    for (int i = 0; i < argument.length(); i++) {
       sums[i + 1] = MxTools.multiply(weights.get(argument.charAt(i)), outputs[i + 1]);
       outputs[i + 2] = activationFunction.vecValue(sums[i + 1]);
     }
-    sums[argument.length()] = MxTools.multiply(weights.get(argument.charAt(argument.length() - 1)), outputs[argument.length()]);
-    outputs[argument.length() + 1] = sums[argument.length()];
-    return outputs[outputs.length - 1];
+
+    sums[depth() - 1] = MxTools.multiply(finalMatrix, outputs[depth() - 1]);
+    outputs[depth()] = activationFunction.vecValue(sums[depth() - 1]);
+    return outputs[depth()];
   }
 
   @Override
@@ -96,12 +100,12 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
 
   @Override
   public int depth() {
-    return currentSeq.length() + 1;
+    return currentSeq.length() + 2;
   }
 
   @Override
   public int ydim() {
-    return allStates;
+    return finalMatrix.rows();
   }
 
   @Override
@@ -109,13 +113,11 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     if (i == 0) {
       return startMatrix;
     }
+    if (i == depth() - 1) {
+      return finalMatrix;
+    }
     Character c = currentSeq.at(i - 1);
     Mx mx = weights.get(c);
-    for (int j = mx.rows() - finalStates + 1; j < mx.rows(); j++) {
-      for (int k = 0; k < mx.columns(); k++) {
-        mx.set(j, k, 0);
-      }
-    }
     return mx;
   }
 
@@ -125,7 +127,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     for (Character c : weights.keySet()) {
       hashMap.put(c, new VecBasedMx(weights.get(c)));
     }
-    return new ProbabilisticAutomaton(allStates, finalStates, hashMap, activationFunction);
+    return new ProbabilisticAutomaton(states, hashMap, activationFunction);
   }
 
   @Override
@@ -136,10 +138,11 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     }
     File startMx = new File(String.format("%s/startMatrix.txt", pathToFolder));
     StringTools.printMx(startMatrix, startMx);
+    File finalMx = new File(String.format("%s/finalMatrix.txt", pathToFolder));
+    StringTools.printMx(finalMatrix, finalMx);
     File states = new File(String.format("%s/states.txt", pathToFolder));
-    Mx mx = new VecBasedMx(1, 2);
-    mx.set(0, 0, allStates);
-    mx.set(0, 1, finalStates);
+    Mx mx = new VecBasedMx(1, 1);
+    mx.set(0, 0, this.states);
     StringTools.printMx(mx, states);
   }
 
@@ -147,7 +150,9 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
     File states = new File(String.format("%s/states.txt", pathToFolder));
     Mx mx = StringTools.readMx(states);
     File startMx = new File(String.format("%s/startMatrix.txt", pathToFolder));
-    Mx startMX = StringTools.readMx(startMx);
+    Mx startMatrix = StringTools.readMx(startMx);
+    File finalMx = new File(String.format("%s/finalMatrix.txt", pathToFolder));
+    Mx finalMatrix = StringTools.readMx(finalMx);
     HashMap<Character, Mx> hashMap = new HashMap<Character, Mx>();
     Pattern p = Pattern.compile("matrix(\\w).txt");
     File folder = new File(pathToFolder);
@@ -159,20 +164,7 @@ public class ProbabilisticAutomaton extends Learnable<CharSeq> {
         }
       }
     }
-    return new ProbabilisticAutomaton((int) mx.get(0, 0), (int) mx.get(0, 1), startMX, hashMap, activationFunction);
+    return new ProbabilisticAutomaton((int) mx.get(0, 0), startMatrix, finalMatrix, hashMap, activationFunction);
   }
 
-  public Vec getComputedVec(CharSeq argument) {
-    Vec vec = compute(argument);
-    Vec compute = new ArrayVec(vec.length() + 1);
-    double expMS = 1;
-    for (int j = 0; j < vec.length(); j++) {
-      expMS += Math.exp(vec.get(j));
-    }
-    for (int i = 0; i < vec.length(); i++) {
-      compute.set(i, Math.exp(vec.get(i)) / expMS);
-    }
-    compute.set(vec.length(), 1 / expMS);
-    return compute;
-  }
 }
