@@ -7,8 +7,10 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.DataSet;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.FunctionC1;
+import ru.spbsu.apmath.neuralnetwork.perceptron.LLLogit;
 
 import java.io.IOException;
 
@@ -57,14 +59,43 @@ public abstract class Learnable<L extends Seq> implements Cloneable, Computable<
     return result;
   }
 
-  public double getPerplexity(DataSet<L> dataSet, TargetFuncC1 targetFuncC1) {
-    double entropy = 0;
+  public double getAccuracy(DataSet<L> dataSet, LLLogit logit){
     int len = dataSet.length();
-    double d = 1 / (double) len;
+    int n = 0;
     for (int i = 0; i < len; i++) {
-      double value = targetFuncC1.value(compute(dataSet.at(i)), i);
-      entropy += d * value;
+      if(compute(dataSet.at(i)).get(0) > 0.5) {
+        if (logit.isPositive(i)) {
+          n++;
+        }
+      } else {
+        if (!logit.isPositive(i)) {
+          n++;
+        }
+      }
     }
-    return Math.exp(-entropy);
+    return (double) n / (double) len;
+  }
+
+  public Pair<Double, Double> getPrecisionAndRecall(DataSet<L> dataSet, LLLogit logit, int category) {
+    double tp = 0, tn = 0, fp = 0, fn = 0;
+    for (int i = 0; i < dataSet.length(); i++) {
+      int answer = (compute(dataSet.at(i)).get(0) > 0.5 ? 1 : 0);
+      if (answer == category) {
+        if (logit.target.get(i) == category) {
+          tp++;
+        } else {
+          fp++;
+        }
+      } else {
+        if (logit.target.get(i) == category) {
+          fn++;
+        } else {
+          tn++;
+        }
+      }
+    }
+    double precision = tp /(tp + fp);
+    double recall = tp / (tp + fn);
+    return new Pair<>(precision, recall);
   }
 }

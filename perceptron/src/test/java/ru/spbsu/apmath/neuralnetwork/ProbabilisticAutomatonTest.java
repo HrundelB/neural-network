@@ -10,7 +10,6 @@ import org.junit.Test;
 import ru.spbsu.apmath.neuralnetwork.automaton.MultiLLLogit;
 import ru.spbsu.apmath.neuralnetwork.automaton.ProbabilisticAutomaton;
 import ru.spbsu.apmath.neuralnetwork.backpropagation.BackPropagation;
-import ru.spbsu.apmath.neuralnetwork.backpropagation.FunctionC1;
 import ru.spbsu.apmath.neuralnetwork.perceptron.LLLogit;
 
 import java.io.File;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import static ru.spbsu.apmath.neuralnetwork.MyPool.getBalancedPool;
 import static ru.spbsu.apmath.neuralnetwork.PerceptronTest.getActivateFunction;
@@ -78,12 +76,21 @@ public class ProbabilisticAutomatonTest {
         if (n % 100 == 0) {
           double l = logit.value(learnable.transAll(pool.getDataSet()));
           System.out.println(String.format("Log likelihood on learn: %s", l));
-          int index = new Random().nextInt(pool.size());
-          System.out.println(String.format("index: %s, target: %s, compute: %s", index,
-                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
-          System.out.println(pool.getDataSet().at(index));
-          double perplexity = learnable.getPerplexity(pool.getDataSet(), logit);
+//          int index = new Random().nextInt(pool.size());
+//          System.out.println(String.format("index: %s, target: %s, compute: %s", index,
+//                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
+//          System.out.println(pool.getDataSet().at(index));
+          double d = 1.0 / pool.getDataSet().length();
+          double perplexity = Math.exp(-d * l);
           System.out.println("Perplexity: " + perplexity);
+          double accuracy = learnable.getAccuracy(pool.getDataSet(), logit);
+          System.out.println("Accuracy: " + accuracy);
+          Pair<Double, Double> pairNegative = learnable.getPrecisionAndRecall(pool.getDataSet(), logit, 0);
+          System.out.println(String.format("[%s] Precision: %s, Recall: %s",
+                  0, pairNegative.getFirst(), pairNegative.getSecond()));
+          Pair<Double, Double> pairPositive = learnable.getPrecisionAndRecall(pool.getDataSet(), logit, 1);
+          System.out.println(String.format("[%s] Precision: %s, Recall: %s",
+                  1, pairPositive.getFirst(), pairPositive.getSecond()));
         }
       }
     };
@@ -111,7 +118,5 @@ public class ProbabilisticAutomatonTest {
     final ProbabilisticAutomaton probabilisticAutomaton = ProbabilisticAutomaton
             .getAutomatonByFiles("perceptron/src/test/data/automaton", getActivateFunction());
     final MultiLLLogit multiLLLogit = new MultiLLLogit(12, pool.getTarget(), pool.getDataSet());
-    double perplexity = probabilisticAutomaton.getPerplexity(pool.getDataSet(), multiLLLogit);
-    System.out.println("Perplexity: " + perplexity);
   }
 }
