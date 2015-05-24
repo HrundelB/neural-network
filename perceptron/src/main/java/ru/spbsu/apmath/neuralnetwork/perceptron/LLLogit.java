@@ -36,6 +36,10 @@ public class LLLogit extends TargetFuncC1 {
     return target.get(i) > 0.07;
   }
 
+  public int getTargetClass(int i) {
+    return isPositive(i) ? 1 : 0;
+  }
+
   @Override
   public double value(Vec x, int indexOfLearningVec) {
     if (isPositive(indexOfLearningVec)) // positive example

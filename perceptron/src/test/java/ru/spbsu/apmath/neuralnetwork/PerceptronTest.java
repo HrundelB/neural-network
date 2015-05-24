@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.spbsu.commons.math.vectors.VecTools.distance;
+import static ru.spbsu.apmath.neuralnetwork.Metrics.getPerplexity;
+import static ru.spbsu.apmath.neuralnetwork.Metrics.printMetrics;
 
 /**
  * Created by IntelliJ IDEA.
@@ -56,9 +58,9 @@ public class PerceptronTest {
 
   @Test
   public void backPropagationTest() throws IOException {
-    Perceptron perceptron = new Perceptron(new int[]{50, 20, 100, 20, 1},
+    Perceptron perceptron = new Perceptron(new int[]{50, 100, 80, 50, 20, 1},
             getActivateFunction());
-    final BackPropagation<LLLogit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.01, 0.0000003, 0.05);
+    final BackPropagation<LLLogit, Vec> backPropagation = new BackPropagation(perceptron, 10000, 0.001, 0.0003, 0.2);
     final Action<Learnable> action = new Action<Learnable>() {
       private long time = System.currentTimeMillis();
       private Learnable oldPerceptron;
@@ -66,10 +68,12 @@ public class PerceptronTest {
 
       @Override
       public void invoke(Learnable perceptron) {
-        if (n % 100 == 0) {
+        n++;
+        System.out.print(String.format("%s\r", n));
+        if (n % 10 == 0) {
           double l = logit.value(perceptron.transAll(dataSet));
           long now;
-          if (n % 1000 == 0) {
+          if (n % 100 == 0) {
             double t = testLogit.value(perceptron.transAll(testDataSet));
             List<Double> distances = new ArrayList<Double>(perceptron.depth());
             if (oldPerceptron != null) {
@@ -80,15 +84,14 @@ public class PerceptronTest {
             oldPerceptron = perceptron.clone();
             now = System.currentTimeMillis();
             System.out.println(String.format("Log likelihood on learn: %s; on test: %s; (time: %s ms)\ndistance: %s", l, t, now - time, distances));
-            backPropagation.setStep(backPropagation.getStep() / 2);
+            System.out.println("Perplexity: " + getPerplexity(testDataSet, t));
+            printMetrics(perceptron, testDataSet, testLogit, 2);
           } else {
             now = System.currentTimeMillis();
             System.out.println(String.format("Log likelihood on learn: %s; (time: %s ms)", l, now - time));
           }
           time = now;
         }
-        n++;
-        System.out.print(String.format("%s\r", n));
       }
     };
     backPropagation.addListener(action);

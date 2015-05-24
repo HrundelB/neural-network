@@ -109,6 +109,11 @@ public class Perceptron extends Learnable<Vec> {
     return new Perceptron(mxes, activationFunction);
   }
 
+  @Override
+  public int getComputedClass(Vec data) {
+    return compute(data).get(0) > 0.5 ? 1 : 0;
+  }
+
   private void fillWithRandom(Mx mx) {
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++) {
