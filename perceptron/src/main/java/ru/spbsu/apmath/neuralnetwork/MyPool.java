@@ -67,11 +67,11 @@ public class MyPool<T extends Seq> {
     }
   }
 
-  public static MyPool<CharSeq> getBalancedPool(Pair<List<CharSeq>, List<Double>> pair) {
+  public static MyPool<CharSeq> getBalancedPool(Pair<List<CharSeq>, List<Double>> pair, int offset, int step) {
     List<CharSeq> data = new ArrayList<CharSeq>();
     List<Double> target = new ArrayList<Double>();
     int n0 = 0, n1 = 0;
-    for (int i = 0; i < pair.getSecond().size(); i += 50) {
+    for (int i = offset; i < pair.getSecond().size(); i += step) {
       double answer = pair.getSecond().get(i);
       if (answer == 0 && n1 >= n0) {
         data.add(pair.getFirst().get(i));

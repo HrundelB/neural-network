@@ -32,12 +32,14 @@ import static ru.spbsu.apmath.neuralnetwork.StringTools.loadTrainTxt;
 public class ProbabilisticAutomatonTest {
 
   private static MyPool<CharSeq> pool;
+  private static MyPool<CharSeq> testPool;
   private static MyPool<CharSeq> manualPool;
 
   @BeforeClass
   public static void init() throws IOException {
     Pair<List<CharSeq>, List<Double>> pair = loadTrainTxt("perceptron/src/test/data/train.txt.gz");
-    pool = getBalancedPool(pair);
+    pool = getBalancedPool(pair, 0, 50);
+    testPool = getBalancedPool(pair, 21, 10);
 
     List<CharSeq> data = Arrays.asList(CharSeq.copy("aaaaaaaaaabaaaaaab"), CharSeq.copy("bbbbbbbbbbabbbbbbbb"), CharSeq.copy("aaabaaaaaabaaa"), CharSeq.copy("bbababbbbbbbbbbbbb"));
     manualPool = new MyPool<>(data, new ArrayVec(0, 1, 0, 1));
@@ -71,12 +73,13 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    int states = 150;
+    int states = 12;
     ProbabilisticAutomaton probabilisticAutomaton =
             new ProbabilisticAutomaton(states, findCharacters(pool.getDataSet()), getActivateFunction(), 2);
     final LLLogit logit = new LLLogit(pool.getTarget(), pool.getDataSet());
+    final LLLogit testLogit = new LLLogit(testPool.getTarget(), testPool.getDataSet());
     final BackPropagation<LLLogit, CharSeq> backPropagation =
-            new BackPropagation<>(probabilisticAutomaton, 3000, 1, 0.003, 0.2);
+            new BackPropagation<>(probabilisticAutomaton, 3000, 0.01, 0.0003, 0.1);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
@@ -84,16 +87,18 @@ public class ProbabilisticAutomatonTest {
       public void invoke(Learnable learnable) {
         n++;
         System.out.print(String.format("%s\r", n));
-        if (n % 10 == 0) {
+        if (n % 100 == 0) {
           double l = logit.value(learnable.transAll(pool.getDataSet()));
           System.out.println(String.format("Log likelihood on learn: %s", l));
-          if (n % 100 == 0) {
+          if (n % 1000 == 0) {
 //          int index = new Random().nextInt(pool.size());
 //          System.out.println(String.format("index: %s, target: %s, compute: %s", index,
 //                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
 //          System.out.println(pool.getDataSet().at(index));
-            System.out.println("Perplexity: " + getPerplexity(pool.getDataSet(), l));
-            printMetrics(learnable, pool.getDataSet(), logit, 2);
+            double t = testLogit.value(learnable.transAll(testPool.getDataSet()));
+            System.out.println(String.format("Log likelihood on test: %s", t));
+            System.out.println("Perplexity: " + getPerplexity(testPool.getDataSet(), t));
+            printMetrics(learnable, testPool.getDataSet(), testLogit, 2);
           }
         }
       }
