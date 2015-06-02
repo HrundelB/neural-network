@@ -48,10 +48,10 @@ public class ProbabilisticAutomatonTest {
   @Test
   public void manualTest() throws IOException {
     final ProbabilisticAutomaton probabilisticAutomaton =
-            new ProbabilisticAutomaton(200, new Character[]{'a', 'b'}, getActivateFunction(), 1);
+            new ProbabilisticAutomaton(3, new Character[]{'a', 'b'}, getActivateFunction(), 1);
     final LLLogit logit = new LLLogit(manualPool.getTarget(), manualPool.getDataSet());
     BackPropagation<LLLogit, CharSeq> backPropagation =
-            new BackPropagation<>(probabilisticAutomaton, 1000, 0.001, 0.0003, 0.2);
+            new BackPropagation<>(probabilisticAutomaton, 100, 1, 0.0003, 0.2);
     Action<Learnable> action = new Action<Learnable>() {
       @Override
       public void invoke(Learnable learnable) {
@@ -73,13 +73,13 @@ public class ProbabilisticAutomatonTest {
 
   @Test
   public void test() throws IOException {
-    int states = 12;
+    int states = 5;
     ProbabilisticAutomaton probabilisticAutomaton =
-            new ProbabilisticAutomaton(states, findCharacters(pool.getDataSet()), getActivateFunction(), 2);
+            new ProbabilisticAutomaton(states, findCharacters(pool.getDataSet()), getActivateFunction(), 1);
     final LLLogit logit = new LLLogit(pool.getTarget(), pool.getDataSet());
     final LLLogit testLogit = new LLLogit(testPool.getTarget(), testPool.getDataSet());
     final BackPropagation<LLLogit, CharSeq> backPropagation =
-            new BackPropagation<>(probabilisticAutomaton, 3000, 0.01, 0.0003, 0.1);
+            new BackPropagation<>(probabilisticAutomaton, 3000, 0.1, 0.0003, 0.1);
     Action<Learnable> action = new Action<Learnable>() {
       private int n = 0;
 
@@ -95,10 +95,10 @@ public class ProbabilisticAutomatonTest {
 //          System.out.println(String.format("index: %s, target: %s, compute: %s", index,
 //                  pool.getTarget().get(index), learnable.compute(pool.getDataSet().at(index))));
 //          System.out.println(pool.getDataSet().at(index));
-            double t = testLogit.value(learnable.transAll(testPool.getDataSet()));
+            double t = logit.value(learnable.transAll(pool.getDataSet()));
             System.out.println(String.format("Log likelihood on test: %s", t));
-            System.out.println("Perplexity: " + getPerplexity(testPool.getDataSet(), t));
-            printMetrics(learnable, testPool.getDataSet(), testLogit, 2);
+            System.out.println("Perplexity: " + getPerplexity(pool.getDataSet(), t));
+            printMetrics(learnable, pool.getDataSet(), logit, 2);
           }
         }
       }

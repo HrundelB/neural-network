@@ -87,10 +87,10 @@ public class BackPropagation<Loss extends TargetFuncC1, T extends Seq> extends W
 
       final T learningVec = learn.at(index);
       tLearnable.setLearn(learningVec);
-      for (int i = 0; i < tLearnable.depth(); i++) {
-        Mx mx = tLearnable.weights(i);
-        setZeroToMx(mx);
-      }
+//      for (int i = 0; i < tLearnable.depth(); i++) {
+//        Mx mx = tLearnable.weights(i);
+//        setZeroToMx(mx);
+//      }
 
       tLearnable.compute(learningVec);
       final int depth = tLearnable.depth() - 1;
